@@ -8,6 +8,9 @@ let settings = {
   theme: 'light'
 };
 let currentDate = new Date();
+let currentFilter = 'all';
+let searchQuery = '';
+let currentSnoozeTaskId = null;
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -15,8 +18,10 @@ async function init() {
   await loadData();
   setupEventListeners();
   renderTasks();
+  renderDashboard();
   renderCalendar();
   applyTheme();
+  updateBadge();
 }
 
 async function loadData() {
@@ -31,19 +36,35 @@ async function saveTasks() {
   await chrome.storage.local.set({ [STORAGE_KEY]: tasks });
 }
 
-async function saveSettings() {
-  await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
-}
-
 function setupEventListeners() {
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => setFilter(btn.dataset.filter));
   });
 
   document.getElementById('taskForm').addEventListener('submit', handleAddTask);
   document.getElementById('settingsBtn').addEventListener('click', openSettings);
   document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
   document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
+  
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchQuery = e.target.value.toLowerCase();
+    renderTasks();
+  });
+
+  document.querySelectorAll('.snooze-menu button').forEach(btn => {
+    btn.addEventListener('click', () => handleSnooze(btn.dataset.snooze));
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.snooze-btn') && !e.target.closest('.snooze-menu')) {
+      document.getElementById('snoozeMenu').classList.remove('show');
+      currentSnoozeTaskId = null;
+    }
+  });
 }
 
 function switchTab(tabName) {
@@ -54,6 +75,15 @@ function switchTab(tabName) {
   document.getElementById(`${tabName}Tab`).classList.add('active');
 
   if (tabName === 'calendar') renderCalendar();
+  if (tabName === 'dashboard') renderDashboard();
+}
+
+function setFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  renderTasks();
 }
 
 async function handleAddTask(e) {
@@ -67,16 +97,21 @@ async function handleAddTask(e) {
     time: document.getElementById('taskTime').value,
     url: document.getElementById('taskUrl').value,
     repeat: document.getElementById('taskRepeat').value,
+    priority: document.getElementById('taskPriority').value,
     completed: false,
-    enabled: true
+    enabled: true,
+    order: tasks.length
   };
 
   tasks.push(task);
   await saveTasks();
   renderTasks();
   renderCalendar();
+  renderDashboard();
+  updateBadge();
 
   e.target.reset();
+  document.getElementById('taskPriority').value = 'medium';
 
   const today = new Date().toISOString().split('T')[0];
   if (task.date === today) {
@@ -88,42 +123,85 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-function renderTasks() {
-  const list = document.getElementById('taskList');
-  list.innerHTML = '';
+function getFilteredTasks() {
+  let filtered = [...tasks];
 
-  const sortedTasks = [...tasks].sort((a, b) => {
+  if (currentFilter === 'active') {
+    filtered = filtered.filter(t => !t.completed);
+  } else if (currentFilter === 'completed') {
+    filtered = filtered.filter(t => t.completed);
+  }
+
+  if (searchQuery) {
+    filtered = filtered.filter(t => 
+      t.title.toLowerCase().includes(searchQuery) ||
+      t.description.toLowerCase().includes(searchQuery)
+    );
+  }
+
+  return filtered.sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
     const dateCompare = a.date.localeCompare(b.date);
     if (dateCompare !== 0) return dateCompare;
     return a.time.localeCompare(b.time);
   });
+}
 
-  sortedTasks.forEach(task => {
+function renderTasks() {
+  const list = document.getElementById('taskList');
+  const emptyState = document.getElementById('emptyState');
+  const filtered = getFilteredTasks();
+
+  list.innerHTML = '';
+
+  if (filtered.length === 0) {
+    emptyState.style.display = 'block';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+
+  const dragHandleIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>`;
+  const snoozeIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"></path><path d="m16.2 7.8 2.9-2.9"></path><path d="M18 12h4"></path><path d="m16.2 16.2 2.9 2.9"></path><path d="M12 18v4"></path><path d="m4.9 19.1 2.9-2.9"></path><path d="M2 12h4"></path><path d="m4.9 4.9 2.9 2.9"></path></svg>`;
+  const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+  const linkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
+
+  filtered.forEach(task => {
     const item = document.createElement('div');
     item.className = `task-item ${task.completed ? 'completed' : ''}`;
+    item.draggable = true;
+    item.dataset.id = task.id;
 
-    let urlHtml = task.url ? `<a href="#" class="task-url" data-url="${task.url}">${task.url.substring(0, 30)}...</a>` : '';
+    const priorityBadge = task.priority === 'high' || task.priority === 'low' 
+      ? `<span class="priority-badge ${task.priority}">${task.priority}</span>` 
+      : '';
 
-    const pauseIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`;
-    const playIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
-    const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+    let urlHtml = task.url 
+      ? `<a href="#" class="task-url" data-url="${task.url}">${linkIcon} ${new URL(task.url).hostname}</a>` 
+      : '';
 
     item.innerHTML = `
+      <span class="drag-handle" title="Drag to reorder">${dragHandleIcon}</span>
       <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
       <div class="task-info">
-        <div class="task-title">${escapeHtml(task.title)}</div>
+        <div class="task-header">
+          <span class="task-title">${escapeHtml(task.title)}</span>
+          ${priorityBadge}
+        </div>
         <div class="task-meta">${formatDate(task.date)} at ${task.time} ${getRepeatLabel(task.repeat)}</div>
         ${urlHtml}
       </div>
       <div class="task-actions">
-        <button class="toggle-btn" data-id="${task.id}" title="${task.enabled ? 'Pause' : 'Resume'}">${task.enabled ? pauseIcon : playIcon}</button>
+        <button class="snooze-btn" data-id="${task.id}" title="Snooze">${snoozeIcon}</button>
         <button class="delete-btn" data-id="${task.id}" title="Delete">${trashIcon}</button>
       </div>
     `;
 
     item.querySelector('.task-checkbox').addEventListener('change', () => toggleComplete(task.id));
     item.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
-    item.querySelector('.toggle-btn').addEventListener('click', () => toggleEnabled(task.id));
+    
+    const snoozeBtn = item.querySelector('.snooze-btn');
+    snoozeBtn.addEventListener('click', (e) => showSnoozeMenu(e, task.id));
 
     if (task.url) {
       item.querySelector('.task-url').addEventListener('click', (e) => {
@@ -132,17 +210,119 @@ function renderTasks() {
       });
     }
 
+    setupDragAndDrop(item);
+
     list.appendChild(item);
   });
 }
 
+function setupDragAndDrop(item) {
+  item.addEventListener('dragstart', (e) => {
+    item.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', item.dataset.id);
+  });
+
+  item.addEventListener('dragend', () => {
+    item.classList.remove('dragging');
+  });
+
+  item.addEventListener('dragover', (e) => {
+    e.preventDefault();
+  });
+
+  item.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    const draggedId = e.dataTransfer.getData('text/plain');
+    const targetId = item.dataset.id;
+
+    if (draggedId === targetId) return;
+
+    const draggedIndex = tasks.findIndex(t => t.id === draggedId);
+    const targetIndex = tasks.findIndex(t => t.id === targetId);
+
+    const [removed] = tasks.splice(draggedIndex, 1);
+    tasks.splice(targetIndex, 0, removed);
+
+    tasks.forEach((t, i) => t.order = i);
+    await saveTasks();
+    renderTasks();
+  });
+}
+
+function showSnoozeMenu(e, taskId) {
+  e.stopPropagation();
+  const menu = document.getElementById('snoozeMenu');
+  const rect = e.target.getBoundingClientRect();
+  
+  menu.style.top = `${rect.bottom + 8}px`;
+  menu.style.left = `${rect.left - 80}px`;
+  menu.classList.add('show');
+  currentSnoozeTaskId = taskId;
+}
+
+async function handleSnooze(snoozeType) {
+  if (!currentSnoozeTaskId) return;
+
+  const task = tasks.find(t => t.id === currentSnoozeTaskId);
+  if (!task) return;
+
+  const now = new Date();
+  let newDate, newTime;
+
+  switch (snoozeType) {
+    case '15':
+      newDate = now.toISOString().split('T')[0];
+      newTime = new Date(now.getTime() + 15 * 60000).toTimeString().slice(0, 5);
+      break;
+    case '30':
+      newDate = now.toISOString().split('T')[0];
+      newTime = new Date(now.getTime() + 30 * 60000).toTimeString().slice(0, 5);
+      break;
+    case '60':
+      newDate = now.toISOString().split('T')[0];
+      newTime = new Date(now.getTime() + 60 * 60000).toTimeString().slice(0, 5);
+      break;
+    case 'tomorrow':
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      newDate = tomorrow.toISOString().split('T')[0];
+      newTime = task.time;
+      break;
+    case 'nextweek':
+      const nextWeek = new Date(now);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      newDate = nextWeek.toISOString().split('T')[0];
+      newTime = task.time;
+      break;
+  }
+
+  task.date = newDate;
+  task.time = newTime;
+
+  await saveTasks();
+  renderTasks();
+  renderCalendar();
+  renderDashboard();
+  updateBadge();
+
+  document.getElementById('snoozeMenu').classList.remove('show');
+  currentSnoozeTaskId = null;
+}
+
 function formatDate(dateStr) {
   const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  if (dateStr === today.toISOString().split('T')[0]) return 'Today';
+  if (dateStr === tomorrow.toISOString().split('T')[0]) return 'Tomorrow';
+  
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function getRepeatLabel(repeat) {
-  const labels = { none: '', daily: '(Daily)', weekly: '(Weekly)', monthly: '(Monthly)' };
+  const labels = { none: '', daily: '↻ Daily', weekly: '↻ Weekly', monthly: '↻ Monthly' };
   return labels[repeat] || '';
 }
 
@@ -158,6 +338,8 @@ async function toggleComplete(id) {
     task.completed = !task.completed;
     await saveTasks();
     renderTasks();
+    renderDashboard();
+    updateBadge();
   }
 }
 
@@ -166,14 +348,41 @@ async function deleteTask(id) {
   await saveTasks();
   renderTasks();
   renderCalendar();
+  renderDashboard();
+  updateBadge();
 }
 
-async function toggleEnabled(id) {
-  const task = tasks.find(t => t.id === id);
-  if (task) {
-    task.enabled = !task.enabled;
-    await saveTasks();
-    renderTasks();
+function renderDashboard() {
+  const total = tasks.length;
+  const completed = tasks.filter(t => t.completed).length;
+  const pending = total - completed;
+  const today = new Date().toISOString().split('T')[0];
+  const todayTasks = tasks.filter(t => t.date === today && !t.completed);
+
+  document.getElementById('totalTasks').textContent = total;
+  document.getElementById('completedTasks').textContent = completed;
+  document.getElementById('pendingTasks').textContent = pending;
+  document.getElementById('todayTasks').textContent = todayTasks.length;
+
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  document.getElementById('progressPercent').textContent = `${percent}%`;
+  document.getElementById('progressFill').style.width = `${percent}%`;
+
+  const todayList = document.getElementById('todayList');
+  todayList.innerHTML = '';
+
+  if (todayTasks.length === 0) {
+    todayList.innerHTML = '<p style="color: var(--text-secondary); font-size: 13px;">No tasks due today. Enjoy!</p>';
+  } else {
+    todayTasks.sort((a, b) => a.time.localeCompare(b.time)).forEach(task => {
+      const item = document.createElement('div');
+      item.className = 'today-task';
+      item.innerHTML = `
+        <span class="time">${task.time}</span>
+        <span class="title">${escapeHtml(task.title)}</span>
+      `;
+      todayList.appendChild(item);
+    });
   }
 }
 
@@ -200,7 +409,9 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   for (let i = 0; i < firstDay; i++) {
-    grid.appendChild(document.createElement('div'));
+    const empty = document.createElement('div');
+    empty.className = 'calendar-day empty';
+    grid.appendChild(empty);
   }
 
   const today = new Date();
@@ -230,11 +441,23 @@ function changeMonth(delta) {
 function filterByDate(dateStr) {
   const filtered = tasks.filter(t => t.date === dateStr);
   const list = document.getElementById('taskList');
-  list.innerHTML = `<h3 style="margin-bottom: 12px; font-size: 16px; font-weight: 600;">Tasks for ${formatDate(dateStr)}</h3>`;
+  const emptyState = document.getElementById('emptyState');
+  
+  list.innerHTML = '';
+
+  const dateTitle = document.createElement('h3');
+  dateTitle.style.cssText = 'margin-bottom: 12px; font-size: 16px; font-weight: 600;';
+  dateTitle.textContent = `Tasks for ${formatDate(dateStr)}`;
+  list.appendChild(dateTitle);
 
   if (filtered.length === 0) {
-    list.innerHTML += '<p style="color: var(--text-secondary); font-size: 14px;">No tasks for this date</p>';
+    const empty = document.createElement('p');
+    empty.style.cssText = 'color: var(--text-secondary); font-size: 14px;';
+    empty.textContent = 'No tasks for this date';
+    list.appendChild(empty);
+    emptyState.style.display = 'none';
   } else {
+    emptyState.style.display = 'none';
     const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
 
     filtered.forEach(task => {
@@ -274,7 +497,6 @@ function openSettings() {
 function scheduleTask(task) {
   if (!task.enabled || task.completed) return;
 
-  const [hours, minutes] = task.time.split(':').map(Number);
   const taskDate = new Date(task.date + 'T' + task.time);
   const now = new Date();
 
@@ -283,5 +505,17 @@ function scheduleTask(task) {
     const delayMs = taskDate.getTime() - now.getTime();
 
     chrome.alarms.create(alarmName, { delayInMinutes: delayMs / 60000 });
+  }
+}
+
+async function updateBadge() {
+  const pending = tasks.filter(t => !t.completed).length;
+  document.getElementById('badgeCount').textContent = pending;
+  
+  if (pending > 0) {
+    chrome.action.setBadgeText({ text: pending.toString() });
+    chrome.action.setBadgeBackgroundColor({ color: '#6366f1' });
+  } else {
+    chrome.action.setBadgeText({ text: '' });
   }
 }
