@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Scheduler - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Settings</h1>
+
+    <div class="settings-group">
+      <h2>Notifications</h2>
+      <label class="setting-item">
+        <input type="checkbox" id="notificationsEnabled">
+        <span>Enable notifications</span>
+      </label>
+    </div>
+
+    <div class="settings-group">
+      <h2>Reminders</h2>
+      <label class="setting-item">
+        <span>Remind me before</span>
+        <select id="reminderMinutes">
+          <option value="0">At task time</option>
+          <option value="5">5 minutes before</option>
+          <option value="10">10 minutes before</option>
+          <option value="15">15 minutes before</option>
+          <option value="30">30 minutes before</option>
+          <option value="60">1 hour before</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="settings-group">
+      <h2>Appearance</h2>
+      <label class="setting-item">
+        <span>Theme</span>
+        <select id="theme">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="settings-group">
+      <h2>Data</h2>
+      <button id="exportBtn" class="btn">Export Tasks</button>
+      <button id="importBtn" class="btn secondary">Import Tasks</button>
+      <input type="file" id="importFile" accept=".json" style="display: none;">
+      <button id="clearBtn" class="btn danger">Clear All Tasks</button>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
