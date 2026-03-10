@@ -49,7 +49,7 @@ function setupEventListeners() {
   document.getElementById('settingsBtn').addEventListener('click', openSettings);
   document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
   document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
-  
+
   document.getElementById('searchInput').addEventListener('input', (e) => {
     searchQuery = e.target.value.toLowerCase();
     renderTasks();
@@ -113,10 +113,7 @@ async function handleAddTask(e) {
   e.target.reset();
   document.getElementById('taskPriority').value = 'medium';
 
-  const today = new Date().toISOString().split('T')[0];
-  if (task.date === today) {
-    scheduleTask(task);
-  }
+  scheduleTask(task);
 }
 
 function generateId() {
@@ -133,7 +130,7 @@ function getFilteredTasks() {
   }
 
   if (searchQuery) {
-    filtered = filtered.filter(t => 
+    filtered = filtered.filter(t =>
       t.title.toLowerCase().includes(searchQuery) ||
       t.description.toLowerCase().includes(searchQuery)
     );
@@ -172,12 +169,12 @@ function renderTasks() {
     item.draggable = true;
     item.dataset.id = task.id;
 
-    const priorityBadge = task.priority === 'high' || task.priority === 'low' 
-      ? `<span class="priority-badge ${task.priority}">${task.priority}</span>` 
+    const priorityBadge = task.priority === 'high' || task.priority === 'low'
+      ? `<span class="priority-badge ${task.priority}">${task.priority}</span>`
       : '';
 
-    let urlHtml = task.url 
-      ? `<a href="#" class="task-url" data-url="${task.url}">${linkIcon} ${new URL(task.url).hostname}</a>` 
+    let urlHtml = task.url
+      ? `<a href="#" class="task-url" data-url="${task.url}">${linkIcon} ${new URL(task.url).hostname}</a>`
       : '';
 
     item.innerHTML = `
@@ -199,7 +196,7 @@ function renderTasks() {
 
     item.querySelector('.task-checkbox').addEventListener('change', () => toggleComplete(task.id));
     item.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
-    
+
     const snoozeBtn = item.querySelector('.snooze-btn');
     snoozeBtn.addEventListener('click', (e) => showSnoozeMenu(e, task.id));
 
@@ -253,7 +250,7 @@ function showSnoozeMenu(e, taskId) {
   e.stopPropagation();
   const menu = document.getElementById('snoozeMenu');
   const rect = e.target.getBoundingClientRect();
-  
+
   menu.style.top = `${rect.bottom + 8}px`;
   menu.style.left = `${rect.left - 80}px`;
   menu.classList.add('show');
@@ -300,6 +297,9 @@ async function handleSnooze(snoozeType) {
   task.time = newTime;
 
   await saveTasks();
+  chrome.alarms.clear(`task_${task.id}`);
+  chrome.alarms.clear(`reminder_${task.id}`);
+  scheduleTask(task);
   renderTasks();
   renderCalendar();
   renderDashboard();
@@ -317,7 +317,7 @@ function formatDate(dateStr) {
 
   if (dateStr === today.toISOString().split('T')[0]) return 'Today';
   if (dateStr === tomorrow.toISOString().split('T')[0]) return 'Tomorrow';
-  
+
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -337,6 +337,12 @@ async function toggleComplete(id) {
   if (task) {
     task.completed = !task.completed;
     await saveTasks();
+    if (task.completed) {
+      chrome.alarms.clear(`task_${id}`);
+      chrome.alarms.clear(`reminder_${id}`);
+    } else {
+      scheduleTask(task);
+    }
     renderTasks();
     renderDashboard();
     updateBadge();
@@ -346,6 +352,8 @@ async function toggleComplete(id) {
 async function deleteTask(id) {
   tasks = tasks.filter(t => t.id !== id);
   await saveTasks();
+  chrome.alarms.clear(`task_${id}`);
+  chrome.alarms.clear(`reminder_${id}`);
   renderTasks();
   renderCalendar();
   renderDashboard();
@@ -442,7 +450,7 @@ function filterByDate(dateStr) {
   const filtered = tasks.filter(t => t.date === dateStr);
   const list = document.getElementById('taskList');
   const emptyState = document.getElementById('emptyState');
-  
+
   list.innerHTML = '';
 
   const dateTitle = document.createElement('h3');
@@ -505,13 +513,21 @@ function scheduleTask(task) {
     const delayMs = taskDate.getTime() - now.getTime();
 
     chrome.alarms.create(alarmName, { delayInMinutes: delayMs / 60000 });
+
+    if (settings.reminderMinutes > 0) {
+      const reminderTime = new Date(taskDate.getTime() - settings.reminderMinutes * 60000);
+      if (reminderTime > now) {
+        const reminderDelay = (reminderTime.getTime() - now.getTime()) / 60000;
+        chrome.alarms.create(`reminder_${task.id}`, { delayInMinutes: reminderDelay });
+      }
+    }
   }
 }
 
 async function updateBadge() {
   const pending = tasks.filter(t => !t.completed).length;
   document.getElementById('badgeCount').textContent = pending;
-  
+
   if (pending > 0) {
     chrome.action.setBadgeText({ text: pending.toString() });
     chrome.action.setBadgeBackgroundColor({ color: '#6366f1' });
