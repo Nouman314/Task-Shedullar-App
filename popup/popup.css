@@ -1,41 +1,63 @@
 :root {
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --primary-light: rgba(99, 102, 241, 0.1);
-  --bg-color: #f8fafc;
-  --surface-color: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --border-color: #e2e8f0;
-  --danger: #ef4444;
+  --primary: #4F46E5;
+  /* Vibrant Indigo */
+  --primary-hover: #4338CA;
+  --primary-light: rgba(79, 70, 229, 0.15);
+  --primary-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+
+  --bg-color: #F8FAFC;
+  --surface-color: #FFFFFF;
+  --surface-hover: #F1F5F9;
+
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+
+  --border-color: #E2E8F0;
+  --danger: #EF4444;
   --danger-light: rgba(239, 68, 68, 0.1);
-  --success: #22c55e;
-  --success-light: rgba(34, 197, 94, 0.1);
-  --warning: #f59e0b;
+  --success: #10B981;
+  --success-light: rgba(16, 185, 129, 0.1);
+  --warning: #F59E0B;
   --warning-light: rgba(245, 158, 11, 0.1);
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Modern Smooth Shadows */
+  --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 24px rgba(15, 23, 42, 0.12);
+  --shadow-hover: 0 16px 32px rgba(79, 70, 229, 0.15);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body.dark {
-  --bg-color: #0f172a;
-  --surface-color: #1e293b;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --border-color: #334155;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3);
-  --primary-light: rgba(99, 102, 241, 0.2);
-  --danger-light: rgba(239, 68, 68, 0.2);
-  --success-light: rgba(34, 197, 94, 0.2);
-  --warning-light: rgba(245, 158, 11, 0.2);
+  --primary: #818CF8;
+  /* Softer Indigo for Dark Mode */
+  --primary-hover: #6366F1;
+  --primary-light: rgba(129, 140, 248, 0.15);
+  --primary-gradient: linear-gradient(135deg, #818CF8 0%, #A78BFA 100%);
+
+  --bg-color: #0B0F19;
+  /* Deep sleek dark */
+  --surface-color: #151D2C;
+  --surface-hover: #1E293B;
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --border-color: #243046;
+
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.6);
+  --shadow-hover: 0 16px 32px rgba(129, 140, 248, 0.2);
+
+  --danger-light: rgba(239, 68, 68, 0.15);
+  --success-light: rgba(16, 185, 129, 0.15);
+  --warning-light: rgba(245, 158, 11, 0.15);
 }
 
 * {
@@ -55,7 +77,7 @@ body {
 }
 
 .container {
-  padding: 20px;
+  padding: 16px;
 }
 
 /* Header */
@@ -73,7 +95,7 @@ header {
 }
 
 h1 {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.025em;
   color: var(--text-primary);
@@ -93,39 +115,44 @@ h1 {
 .icon-btn {
   background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .icon-btn:hover {
-  background: var(--surface-color);
+  background: var(--primary-light);
   color: var(--primary);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
-/* Search Bar */
+.icon-btn:active {
+  transform: translateY(0);
+}
+
+/* Search Bar - Minimalist Redesign */
 .search-bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px;
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  padding: 8px 14px;
+  background: var(--surface-hover);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   margin-bottom: 16px;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
 
 .search-bar:focus-within {
+  background: var(--surface-color);
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-light);
+  box-shadow: 0 0 0 4px var(--primary-light);
 }
 
 .search-bar svg {
@@ -149,34 +176,38 @@ h1 {
 /* Tabs */
 .tabs {
   display: flex;
-  background: var(--surface-color);
+  background: var(--bg-color);
   padding: 4px;
   border-radius: var(--radius-lg);
   margin-bottom: 16px;
-  box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
 }
 
 .tab {
   flex: 1;
-  padding: 8px 12px;
+  padding: 8px 10px;
   border: none;
   background: transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: 600;
   color: var(--text-secondary);
-  font-size: 13px;
-  transition: all 0.2s ease;
+  font-size: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
 }
 
 .tab:hover {
-  color: var(--text-primary);
+  color: var(--primary);
+  background: rgba(79, 70, 229, 0.1);
 }
 
 .tab.active {
-  background: var(--primary);
-  color: white;
+  background: var(--surface-color);
+  color: var(--primary);
   box-shadow: var(--shadow-sm);
 }
 
@@ -229,18 +260,21 @@ h1 {
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .filter-btn:hover {
-  border-color: var(--primary);
+  border-color: var(--primary-light);
   color: var(--primary);
+  background: var(--surface-hover);
+  transform: translateY(-1px);
 }
 
 .filter-btn.active {
   background: var(--primary);
   border-color: var(--primary);
   color: white;
+  box-shadow: 0 4px 12px var(--primary-light);
 }
 
 /* Form */
@@ -254,7 +288,7 @@ h1 {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 input,
@@ -265,22 +299,22 @@ select {
   border-radius: var(--radius-md);
   background: var(--bg-color);
   color: var(--text-primary);
-  font-size: 14px;
-  transition: all 0.2s;
+  font-size: 13px;
   font-family: var(--font-sans);
+  transition: all 0.3s ease;
 }
 
 input:focus,
 select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-light);
+  box-shadow: 0 0 0 4px var(--primary-light), var(--shadow-sm);
   background: var(--surface-color);
 }
 
 .row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .row input,
@@ -295,20 +329,24 @@ select:focus {
   gap: 8px;
   margin-top: 4px;
   padding: 12px;
-  background: var(--primary);
+  background: var(--primary-gradient);
   color: white;
   border: none;
   border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-md);
 }
 
 #addTaskBtn:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+#addTaskBtn:active {
+  transform: translateY(0);
 }
 
 /* Task List */
@@ -339,22 +377,46 @@ select:focus {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 14px;
+  padding: 12px 14px;
   background: var(--surface-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
-  transition: all 0.2s;
-  animation: slideIn 0.25s ease-out;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.task-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: transparent;
+  transition: background 0.3s ease;
 }
 
 .task-item:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.01);
   box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
+}
+
+.task-item:hover::before {
+  background: var(--primary);
 }
 
 .task-item.completed {
-  opacity: 0.7;
+  opacity: 0.6;
+  transform: scale(0.98);
+  box-shadow: none;
+}
+
+.task-item.completed:hover::before {
+  background: var(--success);
 }
 
 .task-item.completed .task-title {
@@ -363,8 +425,10 @@ select:focus {
 }
 
 .task-item.dragging {
-  opacity: 0.5;
-  transform: scale(1.02);
+  opacity: 0.8;
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+  z-index: 10;
 }
 
 .task-checkbox {
@@ -391,7 +455,7 @@ select:focus {
 .task-title {
   font-weight: 600;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.4;
 }
 
@@ -441,82 +505,100 @@ select:focus {
 
 .task-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.task-item:hover .task-actions {
+  opacity: 1;
 }
 
 .task-actions button {
-  padding: 7px;
+  padding: 8px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: transparent;
   color: var(--text-secondary);
 }
 
 .task-actions button:hover {
-  background: var(--bg-color);
+  background: var(--surface-hover);
+  transform: translateY(-1px);
 }
 
 .task-actions .snooze-btn:hover {
   color: var(--warning);
   background: var(--warning-light);
+  box-shadow: 0 4px 8px var(--warning-light);
 }
 
 .task-actions .delete-btn:hover {
   color: var(--danger);
   background: var(--danger-light);
+  box-shadow: 0 4px 8px var(--danger-light);
 }
 
 /* Empty State */
 .empty-state {
   text-align: center;
-  padding: 40px 20px;
+  padding: 48px 20px;
   color: var(--text-secondary);
+  background: var(--surface-color);
+  border-radius: var(--radius-xl);
+  border: 1px dashed var(--border-color);
+  margin-top: 10px;
 }
 
 .empty-state svg {
-  margin-bottom: 16px;
-  opacity: 0.5;
+  margin-bottom: 20px;
+  color: var(--primary-light);
+  width: 64px;
+  height: 64px;
 }
 
 .empty-state p {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  color: var(--text-primary);
 }
 
 .empty-state span {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* Dashboard */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
+  padding: 14px 16px;
   background: var(--surface-color);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
 }
 
 .stat-icon {
@@ -555,7 +637,7 @@ select:focus {
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
@@ -572,6 +654,13 @@ select:focus {
   border-radius: var(--radius-lg);
   padding: 16px;
   margin-bottom: 20px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+}
+
+.progress-section:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-light);
 }
 
 .progress-header {
@@ -676,7 +765,7 @@ select:focus {
 .calendar-header span {
   font-weight: 700;
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .calendar-grid {
@@ -722,13 +811,15 @@ select:focus {
 }
 
 .calendar-day.today {
-  background: var(--primary);
+  background: var(--primary-gradient);
   color: white;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
 }
 
 .calendar-day.today:hover {
-  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .calendar-day.has-task {
@@ -759,12 +850,12 @@ select:focus {
   position: fixed;
   background: var(--surface-color);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  padding: 6px;
+  padding: 8px;
   display: none;
   z-index: 100;
-  animation: fadeIn 0.15s ease-out;
+  animation: fadeIn 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .snooze-menu.show {
@@ -774,21 +865,23 @@ select:focus {
 .snooze-menu button {
   display: block;
   width: 100%;
-  padding: 8px 16px;
+  padding: 10px 16px;
   border: none;
   background: transparent;
   text-align: left;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-primary);
   border-radius: var(--radius-sm);
-  transition: background 0.2s;
+  transition: all 0.2s;
   white-space: nowrap;
 }
 
 .snooze-menu button:hover {
-  background: var(--primary-light);
+  background: var(--surface-hover);
   color: var(--primary);
+  transform: translateX(2px);
 }
 
 /* Drag Handle */
@@ -809,44 +902,50 @@ select:focus {
 }
 
 /* Timer */
+/* Timer Layout Improvements */
 .timer-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 0;
-  animation: fadeIn 0.3s ease-out;
+  gap: 20px;
+  padding: 20px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .timer-modes {
   display: flex;
-  gap: 8px;
-  background: var(--surface-color);
-  padding: 4px;
-  border-radius: 20px;
-  margin-bottom: 30px;
+  gap: 6px;
+  background: var(--bg-color);
+  padding: 6px;
+  border-radius: 30px;
   border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
 }
 
 .timer-mode {
-  padding: 6px 16px;
+  padding: 10px 16px;
   border: none;
   background: transparent;
-  border-radius: 16px;
-  font-size: 12px;
+  border-radius: 20px;
+  cursor: pointer;
   font-weight: 600;
   color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
+  font-size: 13px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: var(--font-sans);
 }
 
 .timer-mode:hover {
-  color: var(--text-primary);
+  color: var(--primary);
 }
 
 .timer-mode.active {
-  background: var(--primary-light);
+  background: var(--surface-color);
   color: var(--primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .timer-display {
@@ -856,7 +955,12 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 30px;
+  filter: drop-shadow(var(--shadow-lg));
+  transition: transform 0.3s ease;
+}
+
+.timer-display:hover {
+  transform: scale(1.02);
 }
 
 .progress-ring {
