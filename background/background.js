@@ -7,6 +7,9 @@ let settings = {
   theme: 'light'
 };
 
+// Prevent overlapping context menu creation runs
+let contextMenuSetupPromise = null;
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name.startsWith('task_')) {
     const taskId = alarm.name.replace('task_', '');
@@ -146,20 +149,50 @@ async function updateBadgeCount() {
   }
 }
 
+function createMenuItemSafe(options) {
+  return new Promise((resolve) => {
+    chrome.contextMenus.create(options, () => {
+      const err = chrome.runtime.lastError;
+      // Ignore duplicate id noise; surface anything else for debugging
+      if (err && !err.message.includes('duplicate id')) {
+        console.error('Context menu creation failed', err);
+      }
+      resolve();
+    });
+  });
+}
+
 async function createContextMenu() {
-  await chrome.contextMenus.removeAll();
+  // Serialize creation to avoid duplicate-id races when init runs twice
+  if (contextMenuSetupPromise) {
+    return contextMenuSetupPromise;
+  }
 
-  chrome.contextMenus.create({
-    id: 'addTaskFromPage',
-    title: 'Add to Task Scheduler',
-    contexts: ['page', 'link']
-  });
+  contextMenuSetupPromise = (async () => {
+    try {
+      await chrome.contextMenus.removeAll();
+    } catch (err) {
+      console.error('Failed clearing context menus', err);
+    }
 
-  chrome.contextMenus.create({
-    id: 'addCurrentPage',
-    title: 'Add Current Page as Task',
-    contexts: ['page']
-  });
+    await createMenuItemSafe({
+      id: 'addTaskFromPage',
+      title: 'Add to Task Scheduler',
+      contexts: ['page', 'link']
+    });
+
+    await createMenuItemSafe({
+      id: 'addCurrentPage',
+      title: 'Add Current Page as Task',
+      contexts: ['page']
+    });
+  })();
+
+  try {
+    await contextMenuSetupPromise;
+  } finally {
+    contextMenuSetupPromise = null;
+  }
 }
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
