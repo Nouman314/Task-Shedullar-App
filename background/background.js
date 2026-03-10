@@ -137,7 +137,7 @@ async function updateBadgeCount() {
   const stored = await chrome.storage.local.get(STORAGE_KEY);
   const tasks = stored[STORAGE_KEY] || [];
   const pending = tasks.filter(t => !t.completed).length;
-  
+
   if (pending > 0) {
     chrome.action.setBadgeText({ text: pending.toString() });
     chrome.action.setBadgeBackgroundColor({ color: '#6366f1' });
@@ -148,7 +148,7 @@ async function updateBadgeCount() {
 
 async function createContextMenu() {
   await chrome.contextMenus.removeAll();
-  
+
   chrome.contextMenus.create({
     id: 'addTaskFromPage',
     title: 'Add to Task Scheduler',
@@ -232,7 +232,7 @@ async function initScheduler() {
   }
 
   chrome.alarms.create('check_tasks', { periodInMinutes: 1 });
-  
+
   await createContextMenu();
   await updateBadgeCount();
 }
@@ -252,3 +252,35 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 initScheduler();
+
+// --- Timer Background Logic ---
+const TIMER_STATE_KEY = 'taskSchedulerTimerState';
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'timer_finished') {
+    handleTimerFinished();
+  }
+});
+
+async function handleTimerFinished() {
+  const storedSettings = await chrome.storage.local.get(SETTINGS_KEY);
+  const currentSettings = storedSettings[SETTINGS_KEY] || settings;
+
+  // Mark timer as finished in storage so UI knows
+  const storedTimer = await chrome.storage.local.get(TIMER_STATE_KEY);
+  if (storedTimer[TIMER_STATE_KEY]) {
+    storedTimer[TIMER_STATE_KEY].isRunning = false;
+    storedTimer[TIMER_STATE_KEY].timeLeft = 0;
+    await chrome.storage.local.set({ [TIMER_STATE_KEY]: storedTimer[TIMER_STATE_KEY] });
+  }
+
+  if (currentSettings.notifications) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon128.png',
+      title: 'Timer Finished!',
+      message: 'Your timer has finished!',
+      priority: 2
+    });
+  }
+}

@@ -1,3 +1,5 @@
+import { initTimer } from './timer.js';
+
 const STORAGE_KEY = 'taskSchedulerTasks';
 const SETTINGS_KEY = 'taskSchedulerSettings';
 
@@ -12,13 +14,6 @@ let currentFilter = 'all';
 let searchQuery = '';
 let currentSnoozeTaskId = null;
 
-// Timer State
-let timerInterval = null;
-let timerTimeLeft = 25 * 60; // in seconds
-let timerTotalTime = 25 * 60;
-let isTimerRunning = false;
-let currentTimerMode = 25; // 25, 5, or 15
-
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
@@ -29,7 +24,7 @@ async function init() {
   renderCalendar();
   applyTheme();
   updateBadge();
-  setupTimer();
+  initTimer();
 }
 
 async function loadData() {
@@ -544,87 +539,3 @@ async function updateBadge() {
   }
 }
 
-// Timer Logic
-function setupTimer() {
-  document.querySelectorAll('.timer-mode').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      document.querySelectorAll('.timer-mode').forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
-      const minutes = parseInt(e.target.dataset.minutes);
-      setTimerMode(minutes);
-    });
-  });
-
-  document.getElementById('startTimerBtn').addEventListener('click', startTimer);
-  document.getElementById('pauseTimerBtn').addEventListener('click', pauseTimer);
-  document.getElementById('resetTimerBtn').addEventListener('click', resetTimer);
-
-  updateTimerDisplay();
-}
-
-function setTimerMode(minutes) {
-  currentTimerMode = minutes;
-  timerTotalTime = minutes * 60;
-  timerTimeLeft = timerTotalTime;
-  pauseTimer();
-  updateTimerDisplay();
-}
-
-function startTimer() {
-  if (isTimerRunning) return;
-
-  isTimerRunning = true;
-  document.getElementById('startTimerBtn').style.display = 'none';
-  document.getElementById('pauseTimerBtn').style.display = 'flex';
-
-  timerInterval = setInterval(() => {
-    timerTimeLeft--;
-    updateTimerDisplay();
-
-    if (timerTimeLeft <= 0) {
-      pauseTimer();
-      timerTimeLeft = 0;
-      updateTimerDisplay();
-
-      // Notify user timer finished
-      if (settings.notifications) {
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icons/icon128.png',
-          title: 'Timer Finished!',
-          message: currentTimerMode === 25 ? 'Time for a break!' : 'Time to focus!',
-          priority: 2
-        });
-      }
-    }
-  }, 1000);
-}
-
-function pauseTimer() {
-  isTimerRunning = false;
-  clearInterval(timerInterval);
-  document.getElementById('startTimerBtn').style.display = 'flex';
-  document.getElementById('pauseTimerBtn').style.display = 'none';
-}
-
-function resetTimer() {
-  setTimerMode(currentTimerMode);
-}
-
-function updateTimerDisplay() {
-  const minutes = Math.floor(timerTimeLeft / 60);
-  const seconds = timerTimeLeft % 60;
-  const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-  document.getElementById('timeLeft').textContent = timeString;
-
-  // Update SVG Circle
-  const circle = document.getElementById('timerProgress');
-  const radius = circle.r.baseVal.value;
-  const circumference = radius * 2 * Math.PI;
-  circle.style.strokeDasharray = `${circumference} ${circumference}`;
-
-  const progress = timerTimeLeft / timerTotalTime;
-  const offset = circumference - progress * circumference;
-  circle.style.strokeDashoffset = offset;
-}
