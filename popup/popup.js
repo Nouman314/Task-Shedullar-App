@@ -24,6 +24,7 @@ async function init() {
   renderDashboard();
   renderCalendar();
   applyTheme();
+  updateThemeIcon();
   updateBadge();
   initTimer();
 }
@@ -51,6 +52,7 @@ function setupEventListeners() {
 
   document.getElementById('taskForm').addEventListener('submit', handleAddTask);
   document.getElementById('settingsBtn').addEventListener('click', openSettings);
+  document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
   document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
   document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
 
@@ -94,6 +96,24 @@ async function handleAddTask(e) {
   e.preventDefault();
   const btn = document.getElementById('addTaskBtn');
   const editId = btn.dataset.editId;
+
+  const urlInput = document.getElementById('taskUrl');
+  const url = urlInput.value.trim();
+
+  // Save trimmed URL and guard against invalid protocols
+  urlInput.value = url;
+  if (!isValidUrl(url)) {
+    urlInput.style.borderColor = 'var(--danger)';
+    urlInput.style.boxShadow = '0 0 0 4px var(--danger-light)';
+    urlInput.placeholder = 'Invalid URL - must start with http:// or https://';
+    urlInput.value = '';
+    setTimeout(() => {
+      urlInput.style.borderColor = '';
+      urlInput.style.boxShadow = '';
+      urlInput.placeholder = 'URL to open (optional)';
+    }, 3000);
+    return;
+  }
 
   if (editId) {
     const task = tasks.find(t => t.id === editId);
@@ -142,6 +162,16 @@ async function handleAddTask(e) {
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function isValidUrl(url) {
+  if (!url) return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 function getFilteredTasks() {
@@ -286,9 +316,22 @@ function showSnoozeMenu(e, taskId) {
   e.stopPropagation();
   const menu = document.getElementById('snoozeMenu');
   const rect = e.target.getBoundingClientRect();
+  const menuWidth = 160;
+  const menuHeight = 200;
 
-  menu.style.top = `${rect.bottom + 8}px`;
-  menu.style.left = `${rect.left - 80}px`;
+  let left = rect.left - 80;
+  if (left + menuWidth > window.innerWidth) {
+    left = window.innerWidth - menuWidth - 8;
+  }
+  if (left < 8) left = 8;
+
+  let top = rect.bottom + 8;
+  if (top + menuHeight > window.innerHeight) {
+    top = rect.top - menuHeight - 8;
+  }
+
+  menu.style.top = `${top}px`;
+  menu.style.left = `${left}px`;
   menu.classList.add('show');
   currentSnoozeTaskId = taskId;
 }
@@ -593,6 +636,19 @@ function applyTheme() {
   }
 }
 
+function updateThemeIcon() {
+  const isDark = settings.theme === 'dark';
+  document.getElementById('moonIcon').style.display = isDark ? 'none' : 'block';
+  document.getElementById('sunIcon').style.display = isDark ? 'block' : 'none';
+}
+
+async function toggleTheme() {
+  settings.theme = settings.theme === 'dark' ? 'light' : 'dark';
+  await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
+  applyTheme();
+  updateThemeIcon();
+}
+
 function openSettings() {
   chrome.runtime.openOptionsPage();
 }
@@ -624,6 +680,5 @@ async function updateBadge() {
   const pending = tasks.filter(t => !t.completed).length;
   document.getElementById('badgeCount').textContent = pending;
 }
-
 
 
