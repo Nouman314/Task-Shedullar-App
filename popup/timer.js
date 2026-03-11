@@ -6,7 +6,8 @@ let timerInterval = null;
 let timerTimeLeft = 25 * 60; // in seconds
 let timerTotalTime = 25 * 60;
 let isTimerRunning = false;
-let currentTimerMode = 25; // preset minutes (number) or "custom"
+let currentTimerMode = 25; // preset minutes
+let focusCustomSeconds = null; // custom duration only for Focus mode
 
 export async function initTimer() {
     // Load state from storage
@@ -14,15 +15,33 @@ export async function initTimer() {
     const state = stored[TIMER_STATE_KEY];
 
     if (state) {
-        currentTimerMode = state.mode;
-        timerTotalTime = state.total;
-        isTimerRunning = state.isRunning;
+        // Back-compat: older builds stored "custom" as a mode; treat it as Focus custom.
+        if (state.mode === 'custom') {
+            currentTimerMode = 25;
+            focusCustomSeconds = Number.isFinite(state.total) ? state.total : null;
+        } else {
+            currentTimerMode = typeof state.mode === 'number' ? state.mode : parseInt(state.mode, 10);
+        }
+
+        if (Number.isFinite(state.focusCustomSeconds)) {
+            focusCustomSeconds = state.focusCustomSeconds;
+        } else if (currentTimerMode === 25 && Number.isFinite(state.total) && state.total !== 25 * 60) {
+            // Infer custom focus duration from stored total when available.
+            focusCustomSeconds = state.total;
+        }
+
+        isTimerRunning = !!state.isRunning;
+        const fallbackTotal = (currentTimerMode === 25 && Number.isFinite(focusCustomSeconds) && focusCustomSeconds !== null)
+            ? focusCustomSeconds
+            : (currentTimerMode * 60);
+        timerTotalTime = Number.isFinite(state.total) ? state.total : fallbackTotal;
 
         if (isTimerRunning) {
             // Calculate how much time passed since last save
             const now = Date.now();
             const elapsedSeconds = Math.floor((now - state.lastUpdated) / 1000);
-            timerTimeLeft = Math.max(0, state.timeLeft - elapsedSeconds);
+            const baseLeft = Number.isFinite(state.timeLeft) ? state.timeLeft : timerTotalTime;
+            timerTimeLeft = Math.max(0, baseLeft - elapsedSeconds);
 
             if (timerTimeLeft > 0) {
                 startTimerInterval();
@@ -36,7 +55,7 @@ export async function initTimer() {
                 document.getElementById('pauseTimerBtn').style.display = 'none';
             }
         } else {
-            timerTimeLeft = state.timeLeft;
+            timerTimeLeft = Number.isFinite(state.timeLeft) ? state.timeLeft : timerTotalTime;
             document.getElementById('startTimerBtn').style.display = 'flex';
             document.getElementById('pauseTimerBtn').style.display = 'none';
         }
@@ -63,7 +82,7 @@ export async function initTimer() {
 
     if (setCustomBtn && customMinutesInput && customSecondsInput) {
         syncCustomInputsFromTotal();
-        setCustomRowActive(currentTimerMode === 'custom');
+        updateCustomVisibility();
 
         const apply = () => applyCustomTimeFromInputs();
         // Use direct assignment so repeated initTimer() calls don't stack handlers.
@@ -96,7 +115,8 @@ async function saveTimerState() {
         timeLeft: timerTimeLeft,
         total: timerTotalTime,
         isRunning: isTimerRunning,
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
+        focusCustomSeconds: focusCustomSeconds
     };
     await chrome.storage.local.set({ [TIMER_STATE_KEY]: state });
 }
@@ -153,12 +173,13 @@ export async function renderSessionHistory() {
 
 function setTimerMode(minutes) {
     currentTimerMode = minutes;
-    timerTotalTime = minutes * 60;
+    const useCustom = (minutes === 25 && Number.isFinite(focusCustomSeconds) && focusCustomSeconds !== null);
+    timerTotalTime = useCustom ? focusCustomSeconds : (minutes * 60);
     timerTimeLeft = timerTotalTime;
     pauseTimer();
     updateTimerDisplay();
     syncCustomInputsFromTotal();
-    setCustomRowActive(false);
+    updateCustomVisibility();
 }
 
 function clampInt(value, min, max) {
@@ -172,19 +193,31 @@ function syncCustomInputsFromTotal() {
     const customSecondsInput = document.getElementById('customSeconds');
     if (!customMinutesInput || !customSecondsInput) return;
 
-    const minutes = Math.floor(timerTotalTime / 60);
-    const seconds = timerTotalTime % 60;
+    // Custom inputs are only meaningful for Focus mode.
+    const totalSeconds = (currentTimerMode === 25 && Number.isFinite(timerTotalTime)) ? timerTotalTime : (25 * 60);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
     customMinutesInput.value = String(minutes);
     customSecondsInput.value = String(seconds).padStart(2, '0');
 }
 
-function setCustomRowActive(isActive) {
+function updateCustomVisibility() {
     const row = document.getElementById('timerCustomRow');
-    if (!row) return;
-    row.classList.toggle('active', !!isActive);
+    const note = document.getElementById('timerCustomNote');
+    const show = currentTimerMode === 25;
+
+    if (row) row.style.display = show ? '' : 'none';
+    if (note) note.style.display = show ? '' : 'none';
+    if (row) row.classList.toggle('active', show && focusCustomSeconds !== null);
 }
 
 function applyCustomTimeFromInputs() {
+    // Custom duration applies only to Focus mode.
+    if (currentTimerMode !== 25) {
+        updateCustomVisibility();
+        return;
+    }
+
     const customMinutesInput = document.getElementById('customMinutes');
     const customSecondsInput = document.getElementById('customSeconds');
     if (!customMinutesInput || !customSecondsInput) return;
@@ -192,25 +225,26 @@ function applyCustomTimeFromInputs() {
     const minutes = clampInt(customMinutesInput.value, 0, 180);
     const seconds = clampInt(customSecondsInput.value, 0, 59);
     const totalSeconds = minutes * 60 + seconds;
-    // If the timer was running, restart from the new custom duration.
-    setCustomDuration(totalSeconds, { restartIfRunning: isTimerRunning });
+    setFocusCustomDuration(totalSeconds, { restartIfRunning: isTimerRunning });
 }
 
-function setCustomDuration(totalSeconds, { restartIfRunning } = {}) {
+function setFocusCustomDuration(totalSeconds, { restartIfRunning } = {}) {
     const shouldRestart = !!restartIfRunning;
     const nextTotal = Math.max(0, totalSeconds);
 
     // Stop existing interval/alarm before swapping durations.
     pauseTimer({ skipSave: true });
 
-    currentTimerMode = 'custom';
+    focusCustomSeconds = nextTotal;
     timerTotalTime = nextTotal;
     timerTimeLeft = nextTotal;
 
     updateTimerDisplay();
     syncCustomInputsFromTotal();
-    document.querySelectorAll('.timer-mode').forEach(b => b.classList.remove('active'));
-    setCustomRowActive(true);
+    document.querySelectorAll('.timer-mode').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.minutes) === 25);
+    });
+    updateCustomVisibility();
 
     // Persist the new custom duration immediately.
     saveTimerState();
@@ -264,14 +298,6 @@ function pauseTimer({ skipSave } = {}) {
 }
 
 function resetTimer() {
-    if (currentTimerMode === 'custom') {
-        timerTimeLeft = timerTotalTime;
-        pauseTimer();
-        updateTimerDisplay();
-        syncCustomInputsFromTotal();
-        return;
-    }
-
     setTimerMode(currentTimerMode);
 }
 
