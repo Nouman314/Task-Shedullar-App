@@ -6,7 +6,7 @@ let timerInterval = null;
 let timerTimeLeft = 25 * 60; // in seconds
 let timerTotalTime = 25 * 60;
 let isTimerRunning = false;
-let currentTimerMode = 25; // 25, 5, or 180 (3 hours)
+let currentTimerMode = 25; // preset minutes (number) or "custom"
 
 export async function initTimer() {
     // Load state from storage
@@ -57,6 +57,31 @@ export async function initTimer() {
         });
     });
 
+    const setCustomBtn = document.getElementById('setCustomTimerBtn');
+    const customMinutesInput = document.getElementById('customMinutes');
+    const customSecondsInput = document.getElementById('customSeconds');
+
+    if (setCustomBtn && customMinutesInput && customSecondsInput) {
+        syncCustomInputsFromTotal();
+        setCustomRowActive(currentTimerMode === 'custom');
+
+        const apply = () => applyCustomTimeFromInputs();
+        // Use direct assignment so repeated initTimer() calls don't stack handlers.
+        setCustomBtn.onclick = apply;
+
+        [customMinutesInput, customSecondsInput].forEach(input => {
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    apply();
+                }
+            };
+
+            // Apply on blur as well (helps if "Set" isn't clicked).
+            input.onchange = () => apply();
+        });
+    }
+
     document.getElementById('startTimerBtn').addEventListener('click', startTimer);
     document.getElementById('pauseTimerBtn').addEventListener('click', pauseTimer);
     document.getElementById('resetTimerBtn').addEventListener('click', resetTimer);
@@ -76,13 +101,15 @@ async function saveTimerState() {
     await chrome.storage.local.set({ [TIMER_STATE_KEY]: state });
 }
 
-async function saveSession(minutes) {
+async function saveSession(durationSeconds) {
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return;
+
     const stored = await chrome.storage.local.get(TIMER_HISTORY_KEY);
     const history = stored[TIMER_HISTORY_KEY] || [];
 
     history.unshift({
         id: Date.now(),
-        duration: minutes,
+        durationSeconds: Math.floor(durationSeconds),
         completedAt: new Date().toISOString()
     });
 
@@ -107,9 +134,17 @@ export async function renderSessionHistory() {
         const date = new Date(session.completedAt);
         const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const seconds = Number.isFinite(session.durationSeconds)
+            ? session.durationSeconds
+            : (Number.isFinite(session.duration) ? session.duration * 60 : 0);
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        const durationLabel = seconds < 60
+            ? `${seconds}s`
+            : (remainingSeconds === 0 ? `${minutes} min` : `${minutes}m ${remainingSeconds}s`);
         return `
             <div class="session-item">
-                <span class="session-duration">${session.duration} min</span>
+                <span class="session-duration">${durationLabel}</span>
                 <span class="session-date">${label} at ${time}</span>
             </div>
         `;
@@ -122,10 +157,72 @@ function setTimerMode(minutes) {
     timerTimeLeft = timerTotalTime;
     pauseTimer();
     updateTimerDisplay();
+    syncCustomInputsFromTotal();
+    setCustomRowActive(false);
+}
+
+function clampInt(value, min, max) {
+    const num = parseInt(value, 10);
+    if (Number.isNaN(num)) return min;
+    return Math.min(max, Math.max(min, num));
+}
+
+function syncCustomInputsFromTotal() {
+    const customMinutesInput = document.getElementById('customMinutes');
+    const customSecondsInput = document.getElementById('customSeconds');
+    if (!customMinutesInput || !customSecondsInput) return;
+
+    const minutes = Math.floor(timerTotalTime / 60);
+    const seconds = timerTotalTime % 60;
+    customMinutesInput.value = String(minutes);
+    customSecondsInput.value = String(seconds).padStart(2, '0');
+}
+
+function setCustomRowActive(isActive) {
+    const row = document.getElementById('timerCustomRow');
+    if (!row) return;
+    row.classList.toggle('active', !!isActive);
+}
+
+function applyCustomTimeFromInputs() {
+    const customMinutesInput = document.getElementById('customMinutes');
+    const customSecondsInput = document.getElementById('customSeconds');
+    if (!customMinutesInput || !customSecondsInput) return;
+
+    const minutes = clampInt(customMinutesInput.value, 0, 180);
+    const seconds = clampInt(customSecondsInput.value, 0, 59);
+    const totalSeconds = minutes * 60 + seconds;
+    // If the timer was running, restart from the new custom duration.
+    setCustomDuration(totalSeconds, { restartIfRunning: isTimerRunning });
+}
+
+function setCustomDuration(totalSeconds, { restartIfRunning } = {}) {
+    const shouldRestart = !!restartIfRunning;
+    const nextTotal = Math.max(0, totalSeconds);
+
+    // Stop existing interval/alarm before swapping durations.
+    pauseTimer({ skipSave: true });
+
+    currentTimerMode = 'custom';
+    timerTotalTime = nextTotal;
+    timerTimeLeft = nextTotal;
+
+    updateTimerDisplay();
+    syncCustomInputsFromTotal();
+    document.querySelectorAll('.timer-mode').forEach(b => b.classList.remove('active'));
+    setCustomRowActive(true);
+
+    // Persist the new custom duration immediately.
+    saveTimerState();
+
+    if (shouldRestart && timerTimeLeft > 0) {
+        startTimer();
+    }
 }
 
 function startTimer() {
     if (isTimerRunning) return;
+    if (timerTimeLeft <= 0) return;
 
     isTimerRunning = true;
     document.getElementById('startTimerBtn').style.display = 'none';
@@ -146,7 +243,7 @@ function startTimerInterval() {
         updateTimerDisplay();
 
         if (timerTimeLeft <= 0) {
-            await saveSession(Math.round(timerTotalTime / 60));
+            await saveSession(timerTotalTime);
             pauseTimer();
             timerTimeLeft = 0;
             updateTimerDisplay();
@@ -156,17 +253,25 @@ function startTimerInterval() {
     }, 1000);
 }
 
-function pauseTimer() {
+function pauseTimer({ skipSave } = {}) {
     isTimerRunning = false;
     clearInterval(timerInterval);
     chrome.alarms.clear('timer_finished');
-    saveTimerState();
+    if (!skipSave) saveTimerState();
 
     document.getElementById('startTimerBtn').style.display = 'flex';
     document.getElementById('pauseTimerBtn').style.display = 'none';
 }
 
 function resetTimer() {
+    if (currentTimerMode === 'custom') {
+        timerTimeLeft = timerTotalTime;
+        pauseTimer();
+        updateTimerDisplay();
+        syncCustomInputsFromTotal();
+        return;
+    }
+
     setTimerMode(currentTimerMode);
 }
 
@@ -190,7 +295,7 @@ function updateTimerDisplay() {
     const circumference = radius * 2 * Math.PI;
     circle.style.strokeDasharray = `${circumference} ${circumference}`;
 
-    const progress = timerTimeLeft / timerTotalTime;
+    const progress = timerTotalTime > 0 ? (timerTimeLeft / timerTotalTime) : 0;
     const offset = circumference - progress * circumference;
     circle.style.strokeDashoffset = offset;
 }

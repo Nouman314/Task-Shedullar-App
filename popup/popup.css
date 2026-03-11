@@ -507,7 +507,7 @@ select:focus {
 }
 
 .task-item.overdue .task-meta::after {
-  content: ' ⚠ Overdue';
+  content: ' Overdue';
   color: var(--danger);
   font-weight: 600;
 }
@@ -1078,6 +1078,77 @@ select:focus {
   padding: 6px;
   border-radius: 30px;
   border: 1px solid var(--border-color);
+}
+
+.timer-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-color);
+}
+
+.timer-custom-row.active {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.timer-custom-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-right: 2px;
+}
+
+.timer-custom-input {
+  width: 60px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--surface-color);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-custom-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-light);
+}
+
+.timer-custom-sep {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.timer-custom-btn {
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.timer-custom-btn:hover {
+  background: var(--surface-hover);
+  color: var(--primary);
+  border-color: var(--primary-light);
+}
+
+.timer-custom-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 .timer-mode {

@@ -171,6 +171,15 @@
           <button class="timer-mode" data-minutes="15">Long Break</button>
         </div>
 
+        <div id="timerCustomRow" class="timer-custom-row">
+          <span class="timer-custom-label">Custom</span>
+          <input id="customMinutes" class="timer-custom-input" type="number" min="0" max="180" value="0" aria-label="Custom minutes">
+          <span class="timer-custom-sep">:</span>
+          <input id="customSeconds" class="timer-custom-input" type="number" min="0" max="59" value="0" aria-label="Custom seconds">
+          <button id="setCustomTimerBtn" class="timer-custom-btn" type="button">Set</button>
+        </div>
+        <p class="timer-custom-note">Note: background notifications have a 30 second minimum.</p>
+
         <div class="timer-display">
           <svg class="progress-ring" width="200" height="200">
             <circle class="progress-ring__circle bg" stroke="var(--border-color)" stroke-width="8" fill="transparent"
