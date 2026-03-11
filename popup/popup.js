@@ -28,6 +28,84 @@ async function init() {
   updateThemeIcon();
   updateBadge();
   initTimer();
+  initCustomDropdowns();
+}
+
+function initCustomDropdowns() {
+  ['taskRepeat', 'taskPriority', 'taskTagColor'].forEach(id => {
+    createCustomDropdown(document.getElementById(id));
+  });
+}
+
+function createCustomDropdown(select) {
+  if (!select) return;
+  
+  // Hide original select
+  select.style.display = 'none';
+  
+  const customSelect = document.createElement('div');
+  customSelect.className = 'custom-select';
+  customSelect.id = `custom-${select.id}`;
+  
+  const trigger = document.createElement('div');
+  trigger.className = 'custom-select-trigger';
+  trigger.tabIndex = 0;
+  
+  const triggerText = document.createElement('span');
+  triggerText.textContent = select.options[select.selectedIndex].textContent;
+  trigger.appendChild(triggerText);
+  
+  const optionsContainer = document.createElement('div');
+  optionsContainer.className = 'custom-options';
+  
+  function updateOptions() {
+    optionsContainer.innerHTML = '';
+    Array.from(select.options).forEach((opt, index) => {
+      const customOpt = document.createElement('div');
+      customOpt.className = `custom-option ${index === select.selectedIndex ? 'selected' : ''}`;
+      customOpt.textContent = opt.textContent;
+      customOpt.addEventListener('click', () => {
+        select.selectedIndex = index;
+        triggerText.textContent = opt.textContent;
+        select.dispatchEvent(new Event('change'));
+        customSelect.classList.remove('open');
+        updateOptions();
+      });
+      optionsContainer.appendChild(customOpt);
+    });
+  }
+  
+  updateOptions();
+  
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Close others
+    document.querySelectorAll('.custom-select').forEach(s => {
+      if (s !== customSelect) s.classList.remove('open');
+    });
+    customSelect.classList.toggle('open');
+  });
+  
+  trigger.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      trigger.click();
+    }
+  });
+  
+  document.addEventListener('click', () => {
+    customSelect.classList.remove('open');
+  });
+  
+  customSelect.appendChild(trigger);
+  customSelect.appendChild(optionsContainer);
+  select.parentNode.insertBefore(customSelect, select.nextSibling);
+
+  // Sync back if native select changes (e.g. form reset)
+  select.addEventListener('change', () => {
+    triggerText.textContent = select.options[select.selectedIndex].textContent;
+    updateOptions();
+  });
 }
 
 async function loadData() {
@@ -206,7 +284,7 @@ function isValidUrl(url) {
 function handleKeyboardShortcuts(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
 
-  switch(e.key) {
+  switch (e.key) {
     case 'n':
     case 'N':
       switchTab('tasks');
@@ -300,14 +378,14 @@ function renderTasks() {
     const tags = Array.isArray(task.tags) ? task.tags : [];
     const tagsHtml = tags.length > 0
       ? tags.map(tag =>
-          `<span class="tag-badge" style="background:${tagColor}22; color:${tagColor}; border:1px solid ${tagColor}55">${escapeHtml(tag)}</span>`
-        ).join('')
+        `<span class="tag-badge" style="background:${tagColor}22; color:${tagColor}; border:1px solid ${tagColor}55">${escapeHtml(tag)}</span>`
+      ).join('')
       : '';
 
     let urlHtml = '';
     if (task.url) {
       let hostname = task.url;
-      try { hostname = new URL(task.url).hostname; } catch(e) {}
+      try { hostname = new URL(task.url).hostname; } catch (e) { }
       urlHtml = `<a href="#" class="task-url" data-url="${task.url}">${linkIcon} ${hostname}</a>`;
     }
 
@@ -512,13 +590,13 @@ async function toggleComplete(id) {
     if (task.completed) {
       chrome.alarms.clear(`task_${id}`);
       chrome.alarms.clear(`reminder_${id}`);
-      
+
       if (task.repeat !== 'none') {
         const next = new Date(task.date + 'T' + task.time);
         if (task.repeat === 'daily') next.setDate(next.getDate() + 1);
         if (task.repeat === 'weekly') next.setDate(next.getDate() + 7);
         if (task.repeat === 'monthly') next.setMonth(next.getMonth() + 1);
-        
+
         task.date = next.toISOString().split('T')[0];
         task.completed = false;
         await saveTasks();
@@ -758,7 +836,7 @@ function filterByDate(dateStr) {
         </div>
       `;
       item.querySelector('.task-checkbox').addEventListener('change', () => toggleComplete(task.id));
-    item.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
+      item.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
       list.appendChild(item);
     });
   }
@@ -824,8 +902,8 @@ async function importTasks(e) {
         tags: Array.isArray(t.tags)
           ? t.tags
           : (typeof t.tags === 'string'
-              ? t.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
-              : []),
+            ? t.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+            : []),
         subtasks: Array.isArray(t.subtasks) ? t.subtasks : [],
         tagColor: typeof t.tagColor === 'string' && t.tagColor ? t.tagColor : '#4F46E5'
       }));

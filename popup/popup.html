@@ -97,16 +97,22 @@
             <option value="high">High Priority</option>
           </select>
         </div>
-        <div class="row">
-          <input type="text" id="taskTags" placeholder="Tags (comma separated)">
-          <select id="taskTagColor">
-            <option value="#4F46E5">Indigo</option>
-            <option value="#10B981">Green</option>
-            <option value="#EF4444">Red</option>
-            <option value="#F59E0B">Yellow</option>
-            <option value="#3B82F6">Blue</option>
-            <option value="#8B5CF6">Purple</option>
-          </select>
+        <div class="row tags-row">
+          <div class="input-group">
+            <label for="taskTags">Tags</label>
+            <input type="text" id="taskTags" placeholder="e.g. work, urgent">
+          </div>
+          <div class="input-group">
+            <label for="taskTagColor">Color</label>
+            <select id="taskTagColor">
+              <option value="#4F46E5">Indigo</option>
+              <option value="#10B981">Green</option>
+              <option value="#EF4444">Red</option>
+              <option value="#F59E0B">Yellow</option>
+              <option value="#3B82F6">Blue</option>
+              <option value="#8B5CF6">Purple</option>
+            </select>
+          </div>
         </div>
         <div id="subtasksContainer">
           <div class="subtask-input-row">
