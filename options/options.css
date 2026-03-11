@@ -171,10 +171,6 @@ select:focus {
   border-color: var(--primary-hover);
 }
 
-.btn.secondary {
-  /* Default styling is secondary */
-}
-
 .btn.danger {
   color: var(--danger);
   border-color: var(--danger);

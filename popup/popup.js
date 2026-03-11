@@ -176,9 +176,12 @@ function renderTasks() {
       ? `<span class="priority-badge ${task.priority}">${task.priority}</span>`
       : '';
 
-    let urlHtml = task.url
-      ? `<a href="#" class="task-url" data-url="${task.url}">${linkIcon} ${new URL(task.url).hostname}</a>`
-      : '';
+    let urlHtml = '';
+    if (task.url) {
+      let hostname = task.url;
+      try { hostname = new URL(task.url).hostname; } catch(e) {}
+      urlHtml = `<a href="#" class="task-url" data-url="${task.url}">${linkIcon} ${hostname}</a>`;
+    }
 
     item.innerHTML = `
       <span class="drag-handle" title="Drag to reorder">${dragHandleIcon}</span>
@@ -343,6 +346,18 @@ async function toggleComplete(id) {
     if (task.completed) {
       chrome.alarms.clear(`task_${id}`);
       chrome.alarms.clear(`reminder_${id}`);
+      
+      if (task.repeat !== 'none') {
+        const next = new Date(task.date + 'T' + task.time);
+        if (task.repeat === 'daily') next.setDate(next.getDate() + 1);
+        if (task.repeat === 'weekly') next.setDate(next.getDate() + 7);
+        if (task.repeat === 'monthly') next.setMonth(next.getMonth() + 1);
+        
+        task.date = next.toISOString().split('T')[0];
+        task.completed = false;
+        await saveTasks();
+        scheduleTask(task);
+      }
     } else {
       scheduleTask(task);
     }
@@ -530,12 +545,4 @@ function scheduleTask(task) {
 async function updateBadge() {
   const pending = tasks.filter(t => !t.completed).length;
   document.getElementById('badgeCount').textContent = pending;
-
-  if (pending > 0) {
-    chrome.action.setBadgeText({ text: pending.toString() });
-    chrome.action.setBadgeBackgroundColor({ color: '#6366f1' });
-  } else {
-    chrome.action.setBadgeText({ text: '' });
-  }
 }
-

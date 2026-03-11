@@ -88,6 +88,7 @@ function startTimer() {
     isTimerRunning = true;
     document.getElementById('startTimerBtn').style.display = 'none';
     document.getElementById('pauseTimerBtn').style.display = 'flex';
+    saveTimerState();
 
     // Create background alarm for notification if popup closes
     chrome.alarms.create('timer_finished', { delayInMinutes: timerTimeLeft / 60 });
@@ -100,9 +101,6 @@ function startTimerInterval() {
     timerInterval = setInterval(() => {
         timerTimeLeft--;
         updateTimerDisplay();
-
-        // Save state every second to keep precise track
-        saveTimerState();
 
         if (timerTimeLeft <= 0) {
             pauseTimer();
