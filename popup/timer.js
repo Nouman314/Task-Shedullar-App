@@ -91,7 +91,8 @@ function startTimer() {
     saveTimerState();
 
     // Create background alarm for notification if popup closes
-    chrome.alarms.create('timer_finished', { delayInMinutes: timerTimeLeft / 60 });
+    const delayMinutes = Math.max(timerTimeLeft / 60, 0.5); // Chrome enforces a 30s minimum
+    chrome.alarms.create('timer_finished', { delayInMinutes: delayMinutes });
 
     startTimerInterval();
 }

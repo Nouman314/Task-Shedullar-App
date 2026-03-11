@@ -6,6 +6,20 @@ let settings = {
   reminderMinutes: 5,
   theme: 'light'
 };
+const ICON_URL = chrome.runtime.getURL('icons/icon128.png');
+const MIN_ALARM_MINUTES = 0.5; // Chrome alarms require at least 30s delay in packed extensions
+
+async function safeCreateNotification(options) {
+  try {
+    await chrome.notifications.create({
+      type: 'basic',
+      iconUrl: ICON_URL,
+      ...options
+    });
+  } catch (err) {
+    console.error('Notification failed', err);
+  }
+}
 
 // Prevent overlapping context menu creation runs
 let contextMenuSetupPromise = null;
@@ -42,9 +56,7 @@ async function handleTaskTrigger(taskId) {
   }
 
   if (settings.notifications) {
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'icons/icon128.png',
+    safeCreateNotification({
       title: 'Task Scheduled',
       message: task.title + (task.url ? ' - URL opened' : '')
     });
@@ -65,10 +77,8 @@ async function handleReminder(taskId) {
   if (!task || task.completed) return;
 
   if (settings.notifications) {
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'icons/icon128.png',
-      title: '🔔 Task Reminder',
+    safeCreateNotification({
+      title: 'Task Reminder',
       message: task.title + (task.description ? '\n' + task.description : ''),
       priority: 1
     });
@@ -108,7 +118,7 @@ function scheduleNextRepeat(task) {
     }
   }
 
-  const delayMinutes = (nextDate.getTime() - now.getTime()) / 60000;
+  const delayMinutes = Math.max((nextDate.getTime() - now.getTime()) / 60000, MIN_ALARM_MINUTES);
   chrome.alarms.create(`task_${task.id}`, { delayInMinutes: delayMinutes });
 }
 
@@ -130,7 +140,7 @@ async function checkUpcomingTasks() {
       const reminderAlarm = `reminder_${task.id}`;
       const alarms = await chrome.alarms.get(reminderAlarm);
       if (!alarms) {
-        chrome.alarms.create(reminderAlarm, { delayInMinutes: diffMinutes });
+        chrome.alarms.create(reminderAlarm, { delayInMinutes: Math.max(diffMinutes, MIN_ALARM_MINUTES) });
       }
     }
   }
@@ -223,9 +233,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     tasks.push(newTask);
     await chrome.storage.local.set({ [STORAGE_KEY]: tasks });
 
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'icons/icon128.png',
+    safeCreateNotification({
       title: 'Task Added',
       message: `"${title}" has been scheduled for ${time}`
     });
@@ -252,14 +260,14 @@ async function initScheduler() {
 
     if (taskDate > now) {
       const delayMinutes = (taskDate.getTime() - now.getTime()) / 60000;
-      chrome.alarms.create(`task_${task.id}`, { delayInMinutes: delayMinutes });
+      chrome.alarms.create(`task_${task.id}`, { delayInMinutes: Math.max(delayMinutes, MIN_ALARM_MINUTES) });
     }
 
     if (settings.reminderMinutes > 0) {
       const reminderTime = new Date(taskDate.getTime() - settings.reminderMinutes * 60000);
       if (reminderTime > now) {
         const reminderDelay = (reminderTime.getTime() - now.getTime()) / 60000;
-        chrome.alarms.create(`reminder_${task.id}`, { delayInMinutes: reminderDelay });
+        chrome.alarms.create(`reminder_${task.id}`, { delayInMinutes: Math.max(reminderDelay, MIN_ALARM_MINUTES) });
       }
     }
   }
@@ -308,12 +316,11 @@ async function handleTimerFinished() {
   }
 
   if (currentSettings.notifications) {
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'icons/icon128.png',
+    safeCreateNotification({
       title: 'Timer Finished!',
       message: 'Your timer has finished!',
       priority: 2
     });
   }
 }
+

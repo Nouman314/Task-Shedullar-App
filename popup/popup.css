@@ -429,6 +429,21 @@ select:focus {
   color: var(--text-secondary);
 }
 
+.task-item.overdue {
+  border-color: var(--danger);
+  background: var(--danger-light);
+}
+
+.task-item.overdue::before {
+  background: var(--danger);
+}
+
+.task-item.overdue .task-meta::after {
+  content: ' ⚠ Overdue';
+  color: var(--danger);
+  font-weight: 600;
+}
+
 .task-item.dragging {
   opacity: 0.8;
   transform: scale(1.05);
@@ -549,6 +564,11 @@ select:focus {
   color: var(--danger);
   background: var(--danger-light);
   box-shadow: 0 4px 8px var(--danger-light);
+}
+
+.task-actions .edit-btn:hover {
+  color: var(--primary);
+  background: var(--primary-light);
 }
 
 /* Empty State */
