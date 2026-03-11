@@ -32,6 +32,10 @@
   --radius-xl: 24px;
 
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(79, 70, 229, 0.2);
+  --scrollbar-thumb-hover: rgba(79, 70, 229, 0.4);
 }
 
 body.dark {
@@ -58,6 +62,9 @@ body.dark {
   --danger-light: rgba(239, 68, 68, 0.15);
   --success-light: rgba(16, 185, 129, 0.15);
   --warning-light: rgba(245, 158, 11, 0.15);
+
+  --scrollbar-thumb: rgba(129, 140, 248, 0.2);
+  --scrollbar-thumb-hover: rgba(129, 140, 248, 0.4);
 }
 
 * {
@@ -92,6 +99,12 @@ header {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 h1 {
@@ -188,6 +201,7 @@ h1 {
   border: 1px solid var(--border-color);
   position: relative;
   overflow: hidden;
+  gap: 4px;
 }
 
 .tab {
@@ -401,7 +415,6 @@ select:focus {
   border-color: var(--primary-light);
 }
 
-/* Task List */
 .task-list {
   display: flex;
   flex-direction: column;
@@ -411,18 +424,26 @@ select:focus {
   padding-right: 4px;
 }
 
-.task-list::-webkit-scrollbar {
-  width: 4px;
-  /* Reduced width to be more professional */
+/* Global Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.task-list::-webkit-scrollbar-track {
-  background: var(--bg-color);
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
 }
 
-.task-list::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 20px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
 }
 
 .task-item {
