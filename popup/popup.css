@@ -1193,41 +1193,59 @@ body.dark .custom-select-trigger::after {
 .timer-custom-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface-color);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--bg-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
 }
 
-.timer-custom-row.active {
+.timer-custom-row:focus-within {
   border-color: var(--primary-light);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .timer-custom-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
+  text-transform: uppercase;
   color: var(--text-secondary);
-  margin-right: 2px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .timer-custom-input {
-  width: 60px;
-  padding: 8px 10px;
+  width: 65px;
+  padding: 8px;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: var(--surface-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-color);
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 13px;
+  font-weight: 600;
+  text-align: center;
   font-variant-numeric: tabular-nums;
+  transition: all 0.2s ease;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.timer-custom-input::-webkit-outer-spin-button,
+.timer-custom-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .timer-custom-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px var(--primary-light);
+  background: var(--surface-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .timer-custom-sep {
@@ -1236,22 +1254,28 @@ body.dark .custom-select-trigger::after {
 }
 
 .timer-custom-btn {
-  border: 1px solid var(--border-color);
-  background: var(--surface-color);
-  color: var(--text-secondary);
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 20px;
   cursor: pointer;
   font-weight: 700;
   font-family: var(--font-sans);
   font-size: 12px;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px var(--primary-light);
+  margin-left: auto;
 }
 
 .timer-custom-btn:hover {
-  background: var(--surface-hover);
-  color: var(--primary);
-  border-color: var(--primary-light);
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px var(--primary-light);
+}
+
+.timer-custom-btn:active {
+  transform: translateY(0);
 }
 
 .timer-custom-note {
