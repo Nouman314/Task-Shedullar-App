@@ -1,5 +1,6 @@
 // timer.js
 const TIMER_STATE_KEY = 'taskSchedulerTimerState';
+const TIMER_HISTORY_KEY = 'taskSchedulerTimerHistory';
 
 let timerInterval = null;
 let timerTimeLeft = 25 * 60; // in seconds
@@ -61,6 +62,7 @@ export async function initTimer() {
     document.getElementById('resetTimerBtn').addEventListener('click', resetTimer);
 
     updateTimerDisplay();
+    renderSessionHistory();
 }
 
 async function saveTimerState() {
@@ -72,6 +74,46 @@ async function saveTimerState() {
         lastUpdated: Date.now()
     };
     await chrome.storage.local.set({ [TIMER_STATE_KEY]: state });
+}
+
+async function saveSession(minutes) {
+    const stored = await chrome.storage.local.get(TIMER_HISTORY_KEY);
+    const history = stored[TIMER_HISTORY_KEY] || [];
+
+    history.unshift({
+        id: Date.now(),
+        duration: minutes,
+        completedAt: new Date().toISOString()
+    });
+
+    if (history.length > 20) history.pop();
+
+    await chrome.storage.local.set({ [TIMER_HISTORY_KEY]: history });
+}
+
+export async function renderSessionHistory() {
+    const stored = await chrome.storage.local.get(TIMER_HISTORY_KEY);
+    const history = stored[TIMER_HISTORY_KEY] || [];
+    const list = document.getElementById('sessionList');
+
+    if (!list) return;
+
+    if (history.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-secondary);font-size:13px;">No sessions yet. Complete a timer to see history.</p>';
+        return;
+    }
+
+    list.innerHTML = history.map(session => {
+        const date = new Date(session.completedAt);
+        const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        return `
+            <div class="session-item">
+                <span class="session-duration">${session.duration} min</span>
+                <span class="session-date">${label} at ${time}</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function setTimerMode(minutes) {
@@ -99,14 +141,16 @@ function startTimer() {
 
 function startTimerInterval() {
     clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
+    timerInterval = setInterval(async () => {
         timerTimeLeft--;
         updateTimerDisplay();
 
         if (timerTimeLeft <= 0) {
+            await saveSession(Math.round(timerTotalTime / 60));
             pauseTimer();
             timerTimeLeft = 0;
             updateTimerDisplay();
+            renderSessionHistory();
             // Notification is handled by background.js alarm 'timer_finished'
         }
     }, 1000);

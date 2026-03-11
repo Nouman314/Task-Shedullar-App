@@ -282,6 +282,23 @@ h1 {
   box-shadow: 0 4px 12px var(--primary-light);
 }
 
+.shortcuts-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+kbd {
+  background: var(--surface-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+}
+
 /* Form */
 #taskForm {
   display: flex;
@@ -352,6 +369,36 @@ select:focus {
 
 #addTaskBtn:active {
   transform: translateY(0);
+}
+
+.export-import-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.secondary-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all 0.2s ease;
+}
+
+.secondary-btn:hover {
+  background: var(--surface-hover);
+  color: var(--primary);
+  border-color: var(--primary-light);
 }
 
 /* Task List */
@@ -500,6 +547,68 @@ select:focus {
 .priority-badge.low {
   background: var(--success-light);
   color: var(--success);
+}
+
+.tag-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.subtask-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
+.subtask-item.completed span {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.subtask-checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--primary);
+}
+
+.subtask-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.subtask-preview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 4px 8px;
+  background: var(--bg-color);
+  border-radius: var(--radius-sm);
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.remove-subtask {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--danger);
+  font-size: 11px;
+  padding: 0 4px;
 }
 
 .task-meta {
@@ -1077,4 +1186,39 @@ body.dark .progress-ring__circle.bg {
 
 .timer-main-btn svg {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.session-history {
+  margin-top: 16px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.session-history h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--bg-color);
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.session-duration {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.session-date {
+  color: var(--text-secondary);
 }

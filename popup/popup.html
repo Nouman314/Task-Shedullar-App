@@ -69,6 +69,8 @@
         <button class="filter-btn" data-filter="completed">Completed</button>
       </div>
 
+      <p class="shortcuts-hint">Press <kbd>N</kbd> new task - <kbd>/</kbd> search - <kbd>T</kbd> timer - <kbd>D</kbd> dashboard</p>
+
       <form id="taskForm">
         <input type="text" id="taskTitle" placeholder="Task title" required>
         <input type="text" id="taskDesc" placeholder="Description (optional)">
@@ -90,6 +92,24 @@
             <option value="high">High Priority</option>
           </select>
         </div>
+        <div class="row">
+          <input type="text" id="taskTags" placeholder="Tags (comma separated)">
+          <select id="taskTagColor">
+            <option value="#4F46E5">Indigo</option>
+            <option value="#10B981">Green</option>
+            <option value="#EF4444">Red</option>
+            <option value="#F59E0B">Yellow</option>
+            <option value="#3B82F6">Blue</option>
+            <option value="#8B5CF6">Purple</option>
+          </select>
+        </div>
+        <div id="subtasksContainer">
+          <div class="subtask-input-row">
+            <input type="text" id="subtaskInput" placeholder="Add subtask and press Enter">
+            <button type="button" id="addSubtaskBtn" class="icon-btn">+</button>
+          </div>
+          <div id="subtaskPreviewList"></div>
+        </div>
         <button type="submit" id="addTaskBtn">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -101,6 +121,26 @@
       </form>
 
       <div class="task-list" id="taskList"></div>
+
+      <div class="export-import-row">
+        <button id="exportBtn" class="secondary-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export
+        </button>
+        <label class="secondary-btn" for="importFile">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Import
+        </label>
+        <input type="file" id="importFile" accept=".json" style="display:none;">
+      </div>
 
       <div class="empty-state" id="emptyState" style="display: none;">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
@@ -154,6 +194,11 @@
             </svg>
           </button>
         </div>
+      </div>
+
+      <div class="session-history">
+        <h3>Session History</h3>
+        <div id="sessionList"></div>
       </div>
     </div>
 

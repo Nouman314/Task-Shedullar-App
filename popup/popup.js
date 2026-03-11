@@ -14,6 +14,7 @@ let currentDate = new Date();
 let currentFilter = 'all';
 let searchQuery = '';
 let currentSnoozeTaskId = null;
+let pendingSubtasks = [];
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -55,6 +56,15 @@ function setupEventListeners() {
   document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
   document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
   document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
+  document.getElementById('exportBtn').addEventListener('click', exportTasks);
+  document.getElementById('importFile').addEventListener('change', importTasks);
+  document.getElementById('subtaskInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addPendingSubtask();
+    }
+  });
+  document.getElementById('addSubtaskBtn').addEventListener('click', addPendingSubtask);
 
   document.getElementById('searchInput').addEventListener('input', (e) => {
     searchQuery = e.target.value.toLowerCase();
@@ -71,6 +81,8 @@ function setupEventListeners() {
       currentSnoozeTaskId = null;
     }
   });
+
+  document.addEventListener('keydown', handleKeyboardShortcuts);
 }
 
 function switchTab(tabName) {
@@ -125,6 +137,12 @@ async function handleAddTask(e) {
       task.url = document.getElementById('taskUrl').value;
       task.repeat = document.getElementById('taskRepeat').value;
       task.priority = document.getElementById('taskPriority').value;
+      task.tags = document.getElementById('taskTags').value
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+      task.tagColor = document.getElementById('taskTagColor').value;
+      task.subtasks = [...pendingSubtasks];
 
       await saveTasks();
       chrome.alarms.clear(`task_${task.id}`);
@@ -142,11 +160,19 @@ async function handleAddTask(e) {
       url: document.getElementById('taskUrl').value,
       repeat: document.getElementById('taskRepeat').value,
       priority: document.getElementById('taskPriority').value,
+      tags: document.getElementById('taskTags').value
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0),
+      tagColor: document.getElementById('taskTagColor').value,
+      subtasks: [...pendingSubtasks],
       completed: false,
       enabled: true,
       order: tasks.length
     };
 
+    pendingSubtasks = [];
+    renderSubtaskPreview();
     tasks.push(task);
     await saveTasks();
     scheduleTask(task);
@@ -158,6 +184,9 @@ async function handleAddTask(e) {
   updateBadge();
   e.target.reset();
   document.getElementById('taskPriority').value = 'medium';
+  document.getElementById('taskTagColor').value = '#4F46E5';
+  pendingSubtasks = [];
+  renderSubtaskPreview();
 }
 
 function generateId() {
@@ -171,6 +200,41 @@ function isValidUrl(url) {
     return parsed.protocol === 'http:' || parsed.protocol === 'https:';
   } catch {
     return false;
+  }
+}
+
+function handleKeyboardShortcuts(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+  switch(e.key) {
+    case 'n':
+    case 'N':
+      switchTab('tasks');
+      document.getElementById('taskTitle').focus();
+      break;
+    case 't':
+    case 'T':
+      switchTab('timer');
+      break;
+    case 'd':
+    case 'D':
+      switchTab('dashboard');
+      break;
+    case 'c':
+    case 'C':
+      switchTab('calendar');
+      break;
+    case '/':
+      e.preventDefault();
+      switchTab('tasks');
+      document.getElementById('searchInput').focus();
+      break;
+    case 'Escape':
+      searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      setFilter('all');
+      document.getElementById('searchInput').blur();
+      break;
   }
 }
 
@@ -232,12 +296,31 @@ function renderTasks() {
       ? `<span class="priority-badge ${task.priority}">${task.priority}</span>`
       : '';
 
+    const tagColor = task.tagColor || '#4F46E5';
+    const tags = Array.isArray(task.tags) ? task.tags : [];
+    const tagsHtml = tags.length > 0
+      ? tags.map(tag =>
+          `<span class="tag-badge" style="background:${tagColor}22; color:${tagColor}; border:1px solid ${tagColor}55">${escapeHtml(tag)}</span>`
+        ).join('')
+      : '';
+
     let urlHtml = '';
     if (task.url) {
       let hostname = task.url;
       try { hostname = new URL(task.url).hostname; } catch(e) {}
       urlHtml = `<a href="#" class="task-url" data-url="${task.url}">${linkIcon} ${hostname}</a>`;
     }
+
+    const subtasksHtml = task.subtasks && task.subtasks.length > 0
+      ? `<div class="subtask-list">
+          ${task.subtasks.map(s => `
+            <div class="subtask-item ${s.completed ? 'completed' : ''}" data-task-id="${task.id}" data-subtask-id="${s.id}">
+              <input type="checkbox" class="subtask-checkbox" ${s.completed ? 'checked' : ''}>
+              <span>${escapeHtml(s.title)}</span>
+            </div>
+          `).join('')}
+        </div>`
+      : '';
 
     item.innerHTML = `
       <span class="drag-handle" title="Drag to reorder">${dragHandleIcon}</span>
@@ -246,9 +329,11 @@ function renderTasks() {
         <div class="task-header">
           <span class="task-title">${escapeHtml(task.title)}</span>
           ${priorityBadge}
+          ${tagsHtml}
         </div>
         <div class="task-meta">${formatDate(task.date)} at ${task.time} ${getRepeatLabel(task.repeat)}</div>
         ${urlHtml}
+        ${subtasksHtml}
       </div>
       <div class="task-actions">
         <button class="snooze-btn" data-id="${task.id}" title="Snooze">${snoozeIcon}</button>
@@ -269,6 +354,14 @@ function renderTasks() {
         chrome.tabs.create({ url: task.url });
       });
     }
+
+    item.querySelectorAll('.subtask-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        const taskId = checkbox.closest('.subtask-item').dataset.taskId;
+        const subtaskId = checkbox.closest('.subtask-item').dataset.subtaskId;
+        toggleSubtask(taskId, subtaskId);
+      });
+    });
 
     const editBtn = item.querySelector('.edit-btn');
     editBtn.addEventListener('click', () => editTask(task.id));
@@ -440,6 +533,17 @@ async function toggleComplete(id) {
   }
 }
 
+async function toggleSubtask(taskId, subtaskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
+  const subtask = subtasks.find(s => s.id === subtaskId);
+  if (!subtask) return;
+  subtask.completed = !subtask.completed;
+  await saveTasks();
+  renderTasks();
+}
+
 async function deleteTask(id) {
   tasks = tasks.filter(t => t.id !== id);
   await saveTasks();
@@ -462,12 +566,44 @@ function editTask(id) {
   document.getElementById('taskUrl').value = task.url;
   document.getElementById('taskRepeat').value = task.repeat;
   document.getElementById('taskPriority').value = task.priority;
+  document.getElementById('taskTags').value = task.tags ? task.tags.join(', ') : '';
+  document.getElementById('taskTagColor').value = task.tagColor || '#4F46E5';
+
+  pendingSubtasks = task.subtasks ? [...task.subtasks] : [];
+  renderSubtaskPreview();
 
   const btn = document.getElementById('addTaskBtn');
   btn.innerHTML = 'Update Task';
   btn.dataset.editId = id;
 
   document.getElementById('taskForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+function addPendingSubtask() {
+  const input = document.getElementById('subtaskInput');
+  const value = input.value.trim();
+  if (!value) return;
+
+  pendingSubtasks.push({ id: generateId(), title: value, completed: false });
+  input.value = '';
+  renderSubtaskPreview();
+}
+
+function renderSubtaskPreview() {
+  const list = document.getElementById('subtaskPreviewList');
+  list.innerHTML = pendingSubtasks.map((s, i) => `
+    <div class="subtask-preview-item">
+      <span>${escapeHtml(s.title)}</span>
+      <button type="button" class="remove-subtask" data-index="${i}">x</button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.remove-subtask').forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingSubtasks.splice(parseInt(btn.dataset.index), 1);
+      renderSubtaskPreview();
+    });
+  });
 }
 
 function renderDashboard() {
@@ -651,6 +787,65 @@ async function toggleTheme() {
 
 function openSettings() {
   chrome.runtime.openOptionsPage();
+}
+
+function exportTasks() {
+  const data = JSON.stringify(tasks, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `tasks-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importTasks(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    try {
+      const imported = JSON.parse(event.target.result);
+      if (!Array.isArray(imported)) throw new Error('Invalid format');
+
+      const existingIds = new Set(tasks.map(t => t.id));
+      const newTasks = imported.filter(t => !existingIds.has(t.id));
+      const normalizedNewTasks = newTasks.map(t => ({
+        enabled: true,
+        completed: false,
+        priority: 'medium',
+        repeat: 'none',
+        tags: [],
+        tagColor: '#4F46E5',
+        subtasks: [],
+        ...t,
+        tags: Array.isArray(t.tags)
+          ? t.tags
+          : (typeof t.tags === 'string'
+              ? t.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+              : []),
+        subtasks: Array.isArray(t.subtasks) ? t.subtasks : [],
+        tagColor: typeof t.tagColor === 'string' && t.tagColor ? t.tagColor : '#4F46E5'
+      }));
+
+      tasks = [...tasks, ...normalizedNewTasks];
+      normalizedNewTasks.forEach(scheduleTask);
+
+      await saveTasks();
+      renderTasks();
+      renderCalendar();
+      renderDashboard();
+      updateBadge();
+
+      alert(`Successfully imported ${newTasks.length} tasks!`);
+    } catch {
+      alert('Invalid file. Please use a valid tasks JSON backup.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
 }
 
 function scheduleTask(task) {
