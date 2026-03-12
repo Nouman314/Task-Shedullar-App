@@ -1,0 +1,76 @@
+/* ── Stats Grid ── */
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+
+.stat-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface-color); border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--primary-light); }
+
+.stat-icon {
+  width: 44px; height: 44px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.stat-icon.total     { background: var(--primary-light);              color: var(--primary); }
+.stat-icon.completed { background: var(--success-light);              color: var(--success); }
+.stat-icon.pending   { background: var(--warning-light);              color: var(--warning); }
+.stat-icon.today     { background: rgba(59, 130, 246, 0.1);           color: #3b82f6; }
+
+.stat-info  { display: flex; flex-direction: column; }
+.stat-value { font-size: 20px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+.stat-label { font-size: 12px; color: var(--text-secondary); }
+
+/* ── Progress ── */
+.progress-section {
+  background: var(--surface-color); border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px;
+  box-shadow: var(--shadow-md); transition: all 0.3s ease;
+}
+.progress-section:hover { box-shadow: var(--shadow-lg); border-color: var(--primary-light); }
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; font-weight: 600; }
+.progress-bar   { height: 10px; background: var(--border-color); border-radius: 5px; overflow: hidden; }
+.progress-fill  { height: 100%; background: linear-gradient(90deg, var(--primary), #8b5cf6); border-radius: 5px; transition: width 0.5s ease; width: 0%; }
+
+/* ── Today / Overdue list ── */
+.today-section { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; }
+.today-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+.today-list { display: flex; flex-direction: column; gap: 8px; }
+
+.today-task {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px; background: var(--bg-color); border-radius: var(--radius-md);
+  font-size: 13px; transition: all 0.2s ease; border: 1px solid transparent;
+}
+.today-task:hover { background: var(--surface-hover); border-color: var(--primary-light); }
+.today-task.completed { opacity: 0.6; }
+.today-task.overdue   { background: var(--danger-light); border-color: rgba(239, 68, 68, 0.2); }
+
+.dashboard-checkbox {
+  width: 18px; height: 18px; margin-top: 2px; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  border: 2px solid var(--border-color); border-radius: 5px;
+  background: var(--surface-color); transition: all 0.2s ease;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative;
+}
+.dashboard-checkbox:checked { background: var(--primary); border-color: var(--primary); }
+.dashboard-checkbox:checked::after {
+  content: ''; position: absolute; width: 10px; height: 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+
+.today-task-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.today-task-top  { display: flex; align-items: center; gap: 8px; }
+.today-task .time  { font-weight: 700; color: var(--primary); font-size: 11px; }
+.today-task .title { font-weight: 500; color: var(--text-primary); line-height: 1.4; }
+.today-task.completed .title { text-decoration: line-through; color: var(--text-secondary); }
+
+.overdue-label {
+  font-size: 9px; font-weight: 800; color: var(--danger);
+  background: white; padding: 1px 4px; border-radius: 4px;
+  border: 1px solid var(--danger);
+}

@@ -1,0 +1,113 @@
+/* ── Timer container ── */
+.timer-container {
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  padding: 20px;
+  background: var(--surface-color); border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Mode selector ── */
+.timer-modes {
+  display: flex; gap: 6px;
+  background: var(--bg-color); padding: 6px; border-radius: 30px;
+  border: 1px solid var(--border-color);
+}
+.timer-mode {
+  padding: 10px 16px; border: none; background: transparent;
+  border-radius: 20px; cursor: pointer; font-weight: 600;
+  color: var(--text-secondary); font-size: 13px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: var(--font-sans);
+}
+.timer-mode:hover  { color: var(--primary); }
+.timer-mode.active { background: var(--surface-color); color: var(--primary); box-shadow: var(--shadow-sm); }
+
+/* ── Custom timer row ── */
+.timer-custom-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface-color); border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%;
+}
+.timer-custom-row:focus-within { border-color: var(--primary-light); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.timer-custom-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em; white-space: nowrap; }
+.timer-custom-input {
+  width: 65px; padding: 8px;
+  border: 1px solid var(--border-color); border-radius: var(--radius-md);
+  background: var(--bg-color); color: var(--text-primary);
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+  text-align: center; font-variant-numeric: tabular-nums;
+  transition: all 0.2s ease;
+  appearance: textfield; -moz-appearance: textfield;
+}
+.timer-custom-input::-webkit-outer-spin-button,
+.timer-custom-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.timer-custom-input:focus { outline: none; border-color: var(--primary); background: var(--surface-color); box-shadow: 0 0 0 3px var(--primary-light); }
+.timer-custom-sep { color: var(--text-secondary); font-weight: 700; }
+.timer-custom-btn {
+  padding: 8px 16px; background: var(--primary); color: white;
+  border: none; border-radius: 20px; cursor: pointer;
+  font-weight: 700; font-family: var(--font-sans); font-size: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px var(--primary-light); margin-left: auto;
+}
+.timer-custom-btn:hover  { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 10px var(--primary-light); }
+.timer-custom-btn:active { transform: translateY(0); }
+.timer-custom-note { margin: 0; font-size: 12px; color: var(--text-secondary); text-align: center; }
+
+/* ── Ring display ── */
+.timer-display {
+  position: relative; width: 200px; height: 200px;
+  display: flex; align-items: center; justify-content: center;
+  filter: drop-shadow(var(--shadow-lg)); transition: transform 0.3s ease;
+}
+.timer-display:hover { transform: scale(1.02); }
+
+.progress-ring { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+.progress-ring__circle { transition: stroke-dashoffset 0.1s linear; }
+.progress-ring__circle.bg { stroke: var(--surface-color); }
+body.dark .progress-ring__circle.bg { stroke: var(--border-color); }
+.progress-ring__circle.fg { stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+
+.time-left { font-size: 38px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+
+/* ── Controls ── */
+.timer-controls { display: flex; align-items: center; gap: 24px; margin-top: 10px; }
+
+.timer-main-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: none; background: var(--primary-gradient); color: white;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px var(--primary-light); z-index: 1;
+}
+.timer-main-btn:hover  { transform: translateY(-2px); box-shadow: 0 6px 16px var(--primary-light); }
+.timer-main-btn:active { transform: scale(0.95); }
+.timer-main-btn svg    { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+
+.timer-secondary-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid var(--border-color); background: var(--surface-color);
+  color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+}
+.timer-secondary-btn:hover { background: var(--surface-hover); color: var(--primary); border-color: var(--primary-light); transform: rotate(30deg); }
+
+/* ── Session History ── */
+.session-history {
+  margin-top: 16px;
+  background: var(--surface-color); border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg); padding: 16px;
+}
+.session-history h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+.session-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; background: var(--bg-color);
+  border-radius: var(--radius-md); margin-bottom: 6px; font-size: 13px;
+}
+.session-duration { font-weight: 700; color: var(--primary); }
+.session-date     { color: var(--text-secondary); }

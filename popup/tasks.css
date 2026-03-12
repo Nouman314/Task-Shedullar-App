@@ -1,0 +1,133 @@
+/* ── Task List ── */
+.task-list {
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: 350px; overflow-y: auto; padding-right: 4px;
+}
+
+/* ── Task Item ── */
+.task-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface-color); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative; overflow: hidden;
+}
+.task-item::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 4px; height: 100%; background: transparent; transition: background 0.3s ease;
+}
+.task-item:hover { transform: translateY(-3px) scale(1.01); box-shadow: var(--shadow-md); border-color: var(--primary-light); }
+.task-item:hover::before { background: var(--primary); }
+
+.task-item.completed { opacity: 0.6; transform: scale(0.98); box-shadow: none; }
+.task-item.completed:hover::before { background: var(--success); }
+.task-item.completed .task-title { text-decoration: line-through; color: var(--text-secondary); }
+
+.task-item.overdue { border-color: var(--danger); background: var(--danger-light); }
+.task-item.overdue::before { background: var(--danger); }
+.task-item.overdue .task-meta::after { content: ' Overdue'; color: var(--danger); font-weight: 600; }
+
+.task-item.dragging { opacity: 0.8; transform: scale(1.05); box-shadow: var(--shadow-lg); z-index: 10; }
+
+/* ── Task Checkbox ── */
+.task-checkbox {
+  width: 20px; height: 20px; margin-top: 2px; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  border: 2px solid var(--border-color); border-radius: 6px;
+  background: var(--surface-color);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative;
+}
+.task-checkbox:hover  { border-color: var(--primary); background: var(--primary-light); }
+.task-checkbox:checked { background: var(--primary); border-color: var(--primary); }
+.task-checkbox:checked::after {
+  content: ''; position: absolute; width: 12px; height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+
+/* ── Task content ── */
+.task-info   { flex: 1; min-width: 0; }
+.task-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.task-title  { font-weight: 600; color: var(--text-primary); font-size: 13px; line-height: 1.4; }
+.task-meta   { font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 2px; }
+.task-url    { color: var(--primary); text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+.task-url:hover { text-decoration: underline; }
+
+/* ── Priority & Tag badges ── */
+.priority-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; }
+.priority-badge.high { background: var(--danger-light);  color: var(--danger); }
+.priority-badge.medium { background: var(--warning-light); color: var(--warning); }
+.priority-badge.low  { background: var(--success-light); color: var(--success); }
+.tag-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+
+/* ── Subtasks ── */
+.subtask-list   { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.subtask-item   { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); padding: 4px 0; }
+.subtask-item.completed span { text-decoration: line-through; opacity: 0.6; }
+
+.subtask-checkbox {
+  width: 16px; height: 16px; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  border: 1.5px solid var(--border-color); border-radius: 4px;
+  background: var(--surface-color); transition: all 0.2s ease;
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+}
+.subtask-checkbox:checked { background: var(--primary); border-color: var(--primary); }
+.subtask-checkbox:checked::after {
+  content: ''; position: absolute; width: 10px; height: 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+
+/* ── Task actions ── */
+.task-actions {
+  display: flex; gap: 6px; flex-shrink: 0;
+  opacity: 0.6; transition: opacity 0.3s ease;
+}
+.task-item:hover .task-actions { opacity: 1; }
+.task-actions button {
+  padding: 8px; border: none; border-radius: var(--radius-md);
+  cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent; color: var(--text-secondary);
+}
+.task-actions button:hover { background: var(--surface-hover); transform: translateY(-1px); }
+.task-actions .snooze-btn:hover { color: var(--warning); background: var(--warning-light); box-shadow: 0 4px 8px var(--warning-light); }
+.task-actions .delete-btn:hover { color: var(--danger);  background: var(--danger-light);  box-shadow: 0 4px 8px var(--danger-light); }
+.task-actions .edit-btn:hover   { color: var(--primary); background: var(--primary-light); }
+
+/* ── Empty State ── */
+.empty-state {
+  text-align: center; padding: 48px 20px; color: var(--text-secondary);
+  background: var(--surface-color); border-radius: var(--radius-xl);
+  border: 1px dashed var(--border-color); margin-top: 10px;
+}
+.empty-state svg  { margin-bottom: 20px; color: var(--primary-light); width: 64px; height: 64px; }
+.empty-state p    { font-size: 18px; font-weight: 600; margin-bottom: 6px; color: var(--text-primary); }
+.empty-state span { font-size: 14px; }
+
+/* ── Drag Handle ── */
+.drag-handle { cursor: grab; color: var(--text-secondary); padding: 4px; opacity: 0.5; transition: opacity 0.2s; }
+.drag-handle:hover  { opacity: 1; }
+.drag-handle:active { cursor: grabbing; }
+
+/* ── Snooze Menu ── */
+.snooze-menu {
+  position: fixed; background: var(--surface-color);
+  border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); padding: 8px;
+  display: none; z-index: 100;
+  animation: fadeIn 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.snooze-menu.show { display: block; }
+.snooze-menu button {
+  display: block; width: 100%; padding: 10px 16px;
+  border: none; background: transparent; text-align: left;
+  cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-primary);
+  border-radius: var(--radius-sm); transition: all 0.2s; white-space: nowrap;
+}
+.snooze-menu button:hover { background: var(--surface-hover); color: var(--primary); transform: translateX(2px); }
