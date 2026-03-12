@@ -30,6 +30,7 @@ async function init() {
   updateBadge();
   initTimer();
   initCustomDropdowns();
+  initCustomPickers(); // Added: Initialize Date and Time pickers
 }
 
 function checkRecurringRollover() {
@@ -244,7 +245,7 @@ async function handleAddTask(e) {
       task.title = document.getElementById('taskTitle').value;
       task.description = document.getElementById('taskDesc').value;
       task.date = document.getElementById('taskDate').value;
-      task.time = document.getElementById('taskTime').value;
+      task.time = to24h(document.getElementById('taskTime').value);
       task.url = document.getElementById('taskUrl').value;
       task.repeat = document.getElementById('taskRepeat').value;
       task.priority = document.getElementById('taskPriority').value;
@@ -267,7 +268,7 @@ async function handleAddTask(e) {
       title: document.getElementById('taskTitle').value,
       description: document.getElementById('taskDesc').value,
       date: document.getElementById('taskDate').value,
-      time: document.getElementById('taskTime').value,
+      time: to24h(document.getElementById('taskTime').value),
       url: document.getElementById('taskUrl').value,
       repeat: document.getElementById('taskRepeat').value,
       priority: document.getElementById('taskPriority').value,
@@ -442,7 +443,7 @@ function renderTasks() {
           ${priorityBadge}
           ${tagsHtml}
         </div>
-        <div class="task-meta">${formatDate(task.date)} at ${task.time} ${getRepeatLabel(task.repeat)}</div>
+        <div class="task-meta">${formatDate(task.date)} at ${to12h(task.time)} ${getRepeatLabel(task.repeat)}</div>
         ${urlHtml}
         ${subtasksHtml}
       </div>
@@ -679,7 +680,7 @@ function editTask(id) {
   document.getElementById('taskTitle').value = task.title;
   document.getElementById('taskDesc').value = task.description;
   document.getElementById('taskDate').value = task.date;
-  document.getElementById('taskTime').value = task.time;
+  document.getElementById('taskTime').value = to12h(task.time);
   document.getElementById('taskUrl').value = task.url;
   document.getElementById('taskRepeat').value = task.repeat;
   document.getElementById('taskPriority').value = task.priority;
@@ -749,7 +750,7 @@ function renderDashboard() {
       const item = document.createElement('div');
       item.className = 'today-task';
       item.innerHTML = `
-        <span class="time">${task.time}</span>
+        <span class="time">${to12h(task.time)}</span>
         <span class="title">${escapeHtml(task.title)}</span>
       `;
       todayList.appendChild(item);
@@ -868,7 +869,7 @@ function filterByDate(dateStr) {
         <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
         <div class="task-info">
           <div class="task-title">${escapeHtml(task.title)}</div>
-          <div class="task-meta">${task.time}</div>
+          <div class="task-meta">${to12h(task.time)}</div>
         </div>
         <div class="task-actions">
           <button class="delete-btn" data-id="${task.id}" title="Delete">${trashIcon}</button>
@@ -991,6 +992,174 @@ function scheduleTask(task) {
 async function updateBadge() {
   const pending = tasks.filter(t => !t.completed).length;
   document.getElementById('badgeCount').textContent = pending;
+}
+
+// Custom Date and Time Picker Implementation
+let pickerDate = new Date();
+let selectedDate = null;
+let selectedTime = { hour: '12', minute: '00', ampm: 'AM' };
+
+function initCustomPickers() {
+  const dateInput = document.getElementById('taskDate');
+  const timeInput = document.getElementById('taskTime');
+  const dateContainer = document.getElementById('datePickerContainer');
+  const timeContainer = document.getElementById('timePickerContainer');
+
+  dateInput.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeAllPickers();
+    dateContainer.classList.add('open');
+    renderDatePicker();
+  });
+
+  timeInput.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeAllPickers();
+    timeContainer.classList.add('open');
+    renderTimePicker();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.picker-container')) {
+      closeAllPickers();
+    }
+  });
+
+  // Default values
+  const today = new Date();
+  dateInput.value = getLocalDateString(today);
+  timeInput.value = "12:00 PM";
+}
+
+function closeAllPickers() {
+  document.querySelectorAll('.picker-container').forEach(c => c.classList.remove('open'));
+}
+
+function renderDatePicker() {
+  const container = document.getElementById('customDatePicker');
+  const year = pickerDate.getFullYear();
+  const month = pickerDate.getMonth();
+  const monthName = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  container.innerHTML = `
+    <div class="dp-header">
+      <button class="dp-nav-btn" id="dpPrevMonth">&lt;</button>
+      <div class="dp-month-label">${monthName}</div>
+      <button class="dp-nav-btn" id="dpNextMonth">&gt;</button>
+    </div>
+    <div class="dp-grid">
+      <div class="dp-day-header">Su</div>
+      <div class="dp-day-header">Mo</div>
+      <div class="dp-day-header">Tu</div>
+      <div class="dp-day-header">We</div>
+      <div class="dp-day-header">Th</div>
+      <div class="dp-day-header">Fr</div>
+      <div class="dp-day-header">Sa</div>
+    </div>
+    <div class="dp-grid" id="dpDays"></div>
+  `;
+
+  document.getElementById('dpPrevMonth').onclick = (e) => {
+    e.stopPropagation();
+    pickerDate.setMonth(pickerDate.getMonth() - 1);
+    renderDatePicker();
+  };
+
+  document.getElementById('dpNextMonth').onclick = (e) => {
+    e.stopPropagation();
+    pickerDate.setMonth(pickerDate.getMonth() + 1);
+    renderDatePicker();
+  };
+
+  const daysGrid = document.getElementById('dpDays');
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = getLocalDateString(new Date());
+
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'dp-day empty';
+    daysGrid.appendChild(empty);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const el = document.createElement('div');
+    el.className = 'dp-day';
+    el.textContent = day;
+
+    if (dateStr === todayStr) el.classList.add('today');
+    if (document.getElementById('taskDate').value === dateStr) el.classList.add('selected');
+
+    el.onclick = (e) => {
+      e.stopPropagation();
+      document.getElementById('taskDate').value = dateStr;
+      closeAllPickers();
+    };
+    daysGrid.appendChild(el);
+  }
+}
+
+function renderTimePicker() {
+  const container = document.getElementById('customTimePicker');
+  const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+  const ampm = ['AM', 'PM'];
+
+  const currentTime = document.getElementById('taskTime').value || "12:00 PM";
+  const [curH, curM_AMP] = currentTime.split(':');
+  const [curM, curAMP] = curM_AMP.split(' ');
+
+  container.innerHTML = `
+    <div class="tp-scroll-container">
+      <div class="tp-column" id="tp-hours"></div>
+      <div class="tp-column" id="tp-minutes"></div>
+      <div class="tp-column" id="tp-ampm"></div>
+    </div>
+  `;
+
+  function createColumn(id, items, current, onSelect) {
+    const col = document.getElementById(id);
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = `tp-item ${item === current ? 'selected' : ''}`;
+      el.textContent = item;
+      el.onclick = (e) => {
+        e.stopPropagation();
+        onSelect(item);
+        updateTimeValue();
+        renderTimePicker();
+      };
+      col.appendChild(el);
+    });
+  }
+
+  createColumn('tp-hours', hours, curH, (h) => selectedTime.hour = h);
+  createColumn('tp-minutes', minutes, curM, (m) => selectedTime.minute = m);
+  createColumn('tp-ampm', ampm, curAMP, (a) => selectedTime.ampm = a);
+}
+
+function updateTimeValue() {
+  const timeStr = `${selectedTime.hour}:${selectedTime.minute} ${selectedTime.ampm}`;
+  document.getElementById('taskTime').value = timeStr;
+}
+
+function to24h(time12h) {
+  if (!time12h || !time12h.includes(' ')) return time12h; // Guard
+  const [time, modifier] = time12h.split(' ');
+  let [hours, minutes] = time.split(':');
+  if (hours === '12') hours = '00';
+  if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
+  return `${String(hours).padStart(2, '0')}:${minutes}`;
+}
+
+function to12h(time24h) {
+  if (!time24h || time24h.includes(' ')) return time24h; // Guard
+  let [hours, minutes] = time24h.split(':');
+  const hr = parseInt(hours, 10);
+  const modifier = hr >= 12 ? 'PM' : 'AM';
+  let h = hr % 12 || 12;
+  return `${String(h).padStart(2, '0')}:${minutes} ${modifier}`;
 }
 
 

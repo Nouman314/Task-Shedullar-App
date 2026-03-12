@@ -19,6 +19,24 @@
         <span class="badge-count" id="badgeCount">0</span>
       </div>
       <div class="header-right">
+        <div class="tooltip-container">
+          <button id="infoBtn" class="icon-btn" title="Keyboard Shortcuts">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </button>
+          <div class="tooltip">
+            <div class="tooltip-header">Keyboard Shortcuts</div>
+            <div class="tooltip-item"><kbd>N</kbd> New task</div>
+            <div class="tooltip-item"><kbd>/</kbd> Search</div>
+            <div class="tooltip-item"><kbd>T</kbd> Timer</div>
+            <div class="tooltip-item"><kbd>D</kbd> Dashboard</div>
+            <div class="tooltip-item"><kbd>C</kbd> Calendar</div>
+          </div>
+        </div>
         <button id="themeToggleBtn" class="icon-btn" title="Toggle Dark Mode">
           <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -73,15 +91,19 @@
         <button class="filter-btn" data-filter="completed">Completed</button>
       </div>
 
-      <p class="shortcuts-hint">Press <kbd>N</kbd> new task - <kbd>/</kbd> search - <kbd>T</kbd> timer - <kbd>D</kbd>
-        dashboard</p>
 
       <form id="taskForm">
         <input type="text" id="taskTitle" placeholder="Task title" required>
         <input type="text" id="taskDesc" placeholder="Description (optional)">
         <div class="row">
-          <input type="date" id="taskDate" required>
-          <input type="time" id="taskTime" required>
+          <div class="picker-container" id="datePickerContainer">
+            <input type="text" id="taskDate" placeholder="Select date" readonly required>
+            <div id="customDatePicker" class="custom-picker"></div>
+          </div>
+          <div class="picker-container" id="timePickerContainer">
+            <input type="text" id="taskTime" placeholder="Select time" readonly required>
+            <div id="customTimePicker" class="custom-picker"></div>
+          </div>
         </div>
         <input type="url" id="taskUrl" placeholder="URL to open (optional)">
         <div class="row">
