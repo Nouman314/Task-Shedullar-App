@@ -34,8 +34,8 @@
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   --scrollbar-track: transparent;
-  --scrollbar-thumb: rgba(79, 70, 229, 0.2);
-  --scrollbar-thumb-hover: rgba(79, 70, 229, 0.4);
+  --scrollbar-thumb: #CBD5E1;
+  --scrollbar-thumb-hover: #94A3B8;
 }
 
 body.dark {
@@ -63,8 +63,8 @@ body.dark {
   --success-light: rgba(16, 185, 129, 0.15);
   --warning-light: rgba(245, 158, 11, 0.15);
 
-  --scrollbar-thumb: rgba(129, 140, 248, 0.2);
-  --scrollbar-thumb-hover: rgba(129, 140, 248, 0.4);
+  --scrollbar-thumb: #475569;
+  --scrollbar-thumb-hover: #64748B;
 }
 
 * {
@@ -74,8 +74,8 @@ body.dark {
 }
 
 body {
-  width: 400px;
-  min-height: 580px;
+  width: 460px;
+  min-height: 680px;
   font-family: var(--font-sans);
   background: var(--bg-color);
   color: var(--text-primary);
