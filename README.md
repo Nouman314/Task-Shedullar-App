@@ -1,52 +1,53 @@
-# Task Scheduler 🚀
+Task Scheduler
+A slick Chrome extension for managing tasks, reminders, and your time—like a personal productivity dashboard with a built-in Pomodoro timer.
 
-A premium, modern task management Chrome extension designed for productivity and focus. Schedule tasks, set reminders, and manage your time with an integrated Pomodoro timer and visual dashboard.
+What Makes It Great
+Premium feel: Smooth animations, modern design that just works.
 
-## ✨ Features
+Light/Dark modes: Switches seamlessly.
 
--   **Premium UI/UX**: A sleek, modern design with smooth animations and transitions.
--   **Dual Themes**: Fully integrated Light and Dark modes.
--   **Smart Task Scheduling**:
-    -   Repeatable tasks (Daily, Weekly, Monthly).
-    -   Priority tagging (Low, Medium, High).
-    -   Customizable color-coded tags.
-    -   Subtask management with progress tracking.
-    -   Global search across all tasks.
--   **Integrated Timer**:
-    -   Quick presets (Focus, 3h, Short/Long Breaks).
-    -   Custom duration entry with premium UI.
-    -   Background notifications for finished sessions.
-    -   Session history tracking.
--   **Visual Dashboards**:
-    -   Real-time completion rate tracking.
-    -   "Due Today" quick-view.
-    -   Full Monthly Calendar view for planning.
--   **Data Portability**: Easily Export/Import your task data as JSON backups.
+Smart tasks: Daily/weekly repeats, priorities (low/med/high), color tags, subtasks with progress, and global search.
 
-## 🛠️ Technologies Used
+Timer built-in: Quick presets (Focus, 3h, breaks), custom times, background alerts, and session history.
 
--   **Manifest V3**: Using modern Chrome extension architecture.
--   **Vanilla JS**: Modular, performance-optimized JavaScript.
--   **Modern CSS**: Featuring custom variables, glassmorphism, and hardware-accelerated animations.
--   **Chrome APIs**: Utilizing `storage`, `notifications`, `alarms`, and `tabs`.
+Dashboards: See completion rates, "Due Today," or plan with the full monthly calendar.
 
-## 📦 Installation
+Backup easy: Export/import as JSON.
 
-1.  Clone this repository or download the source code.
-2.  Open your browser (Chrome/Brave/Edge) and navigate to `chrome://extensions/`.
-3.  Enable **Developer mode** in the top right corner.
-4.  Click **Load unpacked** and select the root directory of this project.
-5.  Pin the "Task Scheduler" extension for quick access!
+Tech Stack
+Manifest V3 for the latest Chrome stuff.
 
-## ⌨️ Keyboard Shortcuts
+Vanilla JS—clean, fast, no bloat.
 
--   `N`: Create new task focus.
--   `/`: Search tasks.
--   `T`: Open Timer tab.
--   `D`: Open Dashboard tab.
--   `C`: Open Calendar tab.
--   `Esc`: Clear search and filters.
+CSS with variables, glassmorphism, and buttery animations.
 
-## 📄 License
+Chrome APIs: storage, notifications, alarms, tabs.
 
-This project is open-source and available under the MIT License.
+Get It Running
+Clone or download this repo.
+
+Go to chrome://extensions/ (works on Chrome/Brave/Edge).
+
+Turn on Developer mode (top right).
+
+Hit Load unpacked and pick the project folder.
+
+Pin the extension for one-click access!
+
+Pro tip: Icons have been added—hover the ? in the header for shortcuts.
+
+Quick Keys
+N: New task
+
+/: Search
+
+T: Timer
+
+D: Dashboard
+
+C: Calendar
+
+Esc: Clear everything
+
+License
+MIT—use it, tweak it, whatever. Open source all the way.

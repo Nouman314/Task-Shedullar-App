@@ -632,6 +632,13 @@ async function toggleComplete(id) {
       if (checkbox) checkbox.checked = task.completed;
     });
 
+    // Also update dashboard checkbox if it exists
+    const dashboardCheckboxes = document.querySelectorAll(`.dashboard-checkbox[data-id="${id}"]`);
+    dashboardCheckboxes.forEach(cb => {
+      cb.checked = task.completed;
+      cb.closest('.today-task').classList.toggle('completed', task.completed);
+    });
+
     if (task.completed) {
       chrome.alarms.clear(`task_${id}`);
       chrome.alarms.clear(`reminder_${id}`);
@@ -729,12 +736,20 @@ function renderDashboard() {
   const completed = tasks.filter(t => t.completed).length;
   const pending = total - completed;
   const today = getLocalDateString(new Date());
-  const todayTasks = tasks.filter(t => t.date === today && !t.completed);
+
+  // Include overdue pending tasks AND tasks due today
+  const dashboardTasks = tasks.filter(t => {
+    const isToday = t.date === today;
+    const isOverdue = t.date < today && !t.completed;
+    return isToday || isOverdue;
+  });
+
+  const dueTodayCount = tasks.filter(t => t.date === today && !t.completed).length;
 
   document.getElementById('totalTasks').textContent = total;
   document.getElementById('completedTasks').textContent = completed;
   document.getElementById('pendingTasks').textContent = pending;
-  document.getElementById('todayTasks').textContent = todayTasks.length;
+  document.getElementById('todayTasks').textContent = dueTodayCount;
 
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
   document.getElementById('progressPercent').textContent = `${percent}%`;
@@ -743,16 +758,29 @@ function renderDashboard() {
   const todayList = document.getElementById('todayList');
   todayList.innerHTML = '';
 
-  if (todayTasks.length === 0) {
-    todayList.innerHTML = '<p style="color: var(--text-secondary); font-size: 13px;">No tasks due today. Enjoy!</p>';
+  if (dashboardTasks.length === 0) {
+    todayList.innerHTML = '<p style="color: var(--text-secondary); font-size: 13px;">No tasks for today. Enjoy!</p>';
   } else {
-    todayTasks.sort((a, b) => a.time.localeCompare(b.time)).forEach(task => {
+    // Sort: Overdue first, then by time
+    dashboardTasks.sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return a.time.localeCompare(b.time);
+    }).forEach(task => {
+      const isOverdue = task.date < today && !task.completed;
       const item = document.createElement('div');
-      item.className = 'today-task';
+      item.className = `today-task ${task.completed ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}`;
       item.innerHTML = `
-        <span class="time">${to12h(task.time)}</span>
-        <span class="title">${escapeHtml(task.title)}</span>
+        <input type="checkbox" class="dashboard-checkbox" data-id="${task.id}" ${task.completed ? 'checked' : ''}>
+        <div class="today-task-info">
+          <div class="today-task-top">
+            <span class="time">${to12h(task.time)}</span>
+            ${isOverdue ? '<span class="overdue-label">OVERDUE</span>' : ''}
+          </div>
+          <span class="title">${escapeHtml(task.title)}</span>
+        </div>
       `;
+
+      item.querySelector('.dashboard-checkbox').addEventListener('change', () => toggleComplete(task.id));
       todayList.appendChild(item);
     });
   }
