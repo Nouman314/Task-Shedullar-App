@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
   await loadData();
+  checkRecurringRollover(); // Added: Reset recurring tasks if it's a new day
   setupEventListeners();
   renderTasks();
   renderDashboard();
@@ -29,6 +30,38 @@ async function init() {
   updateBadge();
   initTimer();
   initCustomDropdowns();
+}
+
+function checkRecurringRollover() {
+  const today = getLocalDateString(new Date());
+  let changed = false;
+
+  tasks.forEach(task => {
+    // If a recurring task was completed on a previous day, reset it
+    if (task.completed && task.repeat !== 'none' && task.date < today) {
+      const taskDate = new Date(task.date + 'T' + task.time);
+      
+      // Calculate next occurrence
+      if (task.repeat === 'daily') taskDate.setDate(taskDate.getDate() + 1);
+      if (task.repeat === 'weekly') taskDate.setDate(taskDate.getDate() + 7);
+      if (task.repeat === 'monthly') taskDate.setMonth(taskDate.getMonth() + 1);
+
+      // If even the next occurrence is in the past, keep moving forward until we hit today or future
+      while (getLocalDateString(taskDate) < today) {
+        if (task.repeat === 'daily') taskDate.setDate(taskDate.getDate() + 1);
+        if (task.repeat === 'weekly') taskDate.setDate(taskDate.getDate() + 7);
+        if (task.repeat === 'monthly') taskDate.setMonth(taskDate.getMonth() + 1);
+      }
+
+      task.date = getLocalDateString(taskDate);
+      task.completed = false;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    saveTasks();
+  }
 }
 
 function initCustomDropdowns() {
@@ -565,8 +598,8 @@ function formatDate(dateStr) {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  if (dateStr === today.toISOString().split('T')[0]) return 'Today';
-  if (dateStr === tomorrow.toISOString().split('T')[0]) return 'Tomorrow';
+  if (dateStr === getLocalDateString(today)) return 'Today';
+  if (dateStr === getLocalDateString(tomorrow)) return 'Tomorrow';
 
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -587,28 +620,34 @@ async function toggleComplete(id) {
   if (task) {
     task.completed = !task.completed;
     await saveTasks();
+
+    // SELECTIVE DOM UPDATE:
+    // Instead of rebuilding the whole list, find the specific item and update it.
+    // This prevents the "Shifting UI" issue where tasks jump under the cursor.
+    const taskElements = document.querySelectorAll(`[data-id="${id}"]`);
+    taskElements.forEach(item => {
+      item.classList.toggle('completed', task.completed);
+      const checkbox = item.querySelector('.task-checkbox');
+      if (checkbox) checkbox.checked = task.completed;
+    });
+
     if (task.completed) {
       chrome.alarms.clear(`task_${id}`);
       chrome.alarms.clear(`reminder_${id}`);
-
-      if (task.repeat !== 'none') {
-        const next = new Date(task.date + 'T' + task.time);
-        if (task.repeat === 'daily') next.setDate(next.getDate() + 1);
-        if (task.repeat === 'weekly') next.setDate(next.getDate() + 7);
-        if (task.repeat === 'monthly') next.setMonth(next.getMonth() + 1);
-
-        task.date = next.toISOString().split('T')[0];
-        task.completed = false;
-        await saveTasks();
-        scheduleTask(task);
-      }
     } else {
       scheduleTask(task);
     }
-    renderTasks();
+
     renderDashboard();
     updateBadge();
   }
+}
+
+function getLocalDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 async function toggleSubtask(taskId, subtaskId) {
@@ -688,7 +727,7 @@ function renderDashboard() {
   const total = tasks.length;
   const completed = tasks.filter(t => t.completed).length;
   const pending = total - completed;
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString(new Date());
   const todayTasks = tasks.filter(t => t.date === today && !t.completed);
 
   document.getElementById('totalTasks').textContent = total;
@@ -747,7 +786,7 @@ function renderCalendar() {
   }
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = getLocalDateString(today);
 
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
