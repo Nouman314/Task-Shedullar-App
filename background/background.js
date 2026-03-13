@@ -307,12 +307,29 @@ async function handleTimerFinished() {
   const storedSettings = await chrome.storage.local.get(SETTINGS_KEY);
   const currentSettings = storedSettings[SETTINGS_KEY] || settings;
 
-  // Mark timer as finished in storage so UI knows
   const storedTimer = await chrome.storage.local.get(TIMER_STATE_KEY);
-  if (storedTimer[TIMER_STATE_KEY]) {
-    storedTimer[TIMER_STATE_KEY].isRunning = false;
-    storedTimer[TIMER_STATE_KEY].timeLeft = 0;
-    await chrome.storage.local.set({ [TIMER_STATE_KEY]: storedTimer[TIMER_STATE_KEY] });
+  const timerState = storedTimer[TIMER_STATE_KEY];
+
+  if (timerState) {
+    // Save to history only if timer was actually running
+    if (timerState.isRunning && timerState.total > 0) {
+      const TIMER_HISTORY_KEY = 'taskSchedulerTimerHistory';
+      const historyStored = await chrome.storage.local.get(TIMER_HISTORY_KEY);
+      const history = historyStored[TIMER_HISTORY_KEY] || [];
+
+      history.unshift({
+        id: Date.now(),
+        durationSeconds: Math.floor(timerState.total),
+        completedAt: new Date().toISOString()
+      });
+      if (history.length > 20) history.pop();
+
+      await chrome.storage.local.set({ [TIMER_HISTORY_KEY]: history });
+    }
+
+    timerState.isRunning = false;
+    timerState.timeLeft = 0;
+    await chrome.storage.local.set({ [TIMER_STATE_KEY]: timerState });
   }
 
   if (currentSettings.notifications) {
@@ -323,4 +340,3 @@ async function handleTimerFinished() {
     });
   }
 }
-
